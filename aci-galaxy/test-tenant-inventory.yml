@@ -1,0 +1,36 @@
+fabric01:
+   hosts:
+      apic-troy-1:
+         apic_hosts: 5.0.7.250
+         apic_username: admin
+         apic_password: cisco12345
+   vars:
+      apic_use_proxy: no
+      apic_validate_certs: no
+      
+      aci_topology:
+         tenant:
+         - name: MyTestTenant
+           description: testing ansible-galaxy
+           app:
+           - name: MyApp
+             epg:
+             - name: Web-01
+               bd: web_bd
+             - name: App-01
+               bd: app_bd
+           bd:
+           - name: app_bd
+             subnet: 
+             - name: 21.21.21.1
+               mask: 24
+               scope: private
+             vrf: MyVRF
+           - name: web_bd
+             subnet:
+             - name: 22.22.22.1
+               mask: 24
+               scope: public
+             vrf: MyVRF
+           vrf: 
+           - name: MyVRF
