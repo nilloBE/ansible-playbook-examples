@@ -1,0 +1,68 @@
+---
+# Playbook that takes a list of EPGs and adds them to an existing tenant and AP and maps them to a RHV VMM Domain
+# As of Ansible 2.4 the aci_epg_to_domain module does not yet support RHV VMM domain, so that task is done using aci_rest.
+# 
+# The name of the tenant, ap, bd, and epg come from a vars file.
+#
+- name: Create a set of EPGs and map them to a RHV VMM Domain
+  hosts: apic-troy-1
+  connection: local
+  gather_facts: no
+  
+  vars_files:
+    - vars_create_epgs_for_rhv.yml
+
+  tasks:
+    - name: Create EPGs
+      aci_epg: 
+         hostname: "{{ inventory_hostname }}"
+         username: "{{ user }}"
+         private_key: /root/admin.key
+         certificate_name: admin
+         validate_certs: no
+         use_proxy: no
+         tenant: "{{ tenant_name }}"
+         ap: "{{ ap_name }}"
+         bd: "{{ bd_name }}"
+         epg: "{{ item }}"
+         state: "{{ state }}"
+      with_items: "{{ epg_name }}"
+      register: epg_result
+
+    - name: Map EPGs to RHV VMM Domain
+      aci_rest:
+         hostname: "{{ inventory_hostname }}"
+         username: "{{ user }}"
+         private_key: /root/admin.key
+         validate_certs: no  
+         certificate_name: admin
+         method: post
+         use_proxy: no
+         path: api/mo/uni.json
+         content:
+           fvTenant:
+              attributes:
+                 name: "{{ tenant_name }}"
+              children:
+              - fvAp:
+                  attributes:
+                     name: "{{ ap_name }}"
+                  children:
+                  - fvAEPg:
+                      attributes:
+                         name: "{{ item }}"
+                         isAttrBasedEPg: "no"
+                         prefGrMemb: "exclude"
+                      children:
+                         - fvRsDomAtt:
+                            attributes:
+                               instrImedcy: "immediate"
+                               resImedcy: "pre-provision"
+                               tDn: "{{ vmm_domain_dn }}"
+      with_items: "{{ epg_name }}"
+      when: state == "present"
+      register: rest_result
+    
+    - name: print a debug message
+      debug:
+              var: rest_result

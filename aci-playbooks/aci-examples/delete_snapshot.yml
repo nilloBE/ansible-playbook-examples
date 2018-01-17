@@ -1,0 +1,34 @@
+---
+- name: ask for a snapshot file and delete it
+  hosts: apic-troy-1
+  connection: local
+  gather_facts: no
+  
+  vars:
+      state: "absent"
+
+  vars_prompt:
+    - name: export_policy
+      prompt: "Name of the export policy"
+      private: no
+      default: defaultOneTime
+    - name: snapshot_file
+      prompt: "Name of the file to delete"
+      private: no
+      default: none
+
+  tasks:
+    - name: DELETING SNAPSHOT
+      aci_config_snapshot:
+         hostname: "{{ inventory_hostname }}"
+         username: "{{ user }}"
+         private_key: /root/admin.key
+         validate_certs: no
+         snapshot: "{{ snapshot_file }}"
+         export_policy: "{{ export_policy }}"
+         state: "{{ state }}"
+      register: delete_result
+
+    - name: Debug the previous task
+      debug:
+         var: delete_result

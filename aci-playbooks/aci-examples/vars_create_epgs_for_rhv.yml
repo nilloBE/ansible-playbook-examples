@@ -1,0 +1,13 @@
+---
+# Variables used to add EPGs to a tenant and AP and map them to a RHV VMM Domain
+#
+state: absent
+tenant_name: T1
+vrf_name: VRF1
+bd_name: BD1
+vmm_domain_dn: uni/vmmp-Redhat/dom-RHV-VMM-01
+ap_name: AP1
+epg_name:
+        - Acme-Web
+        - Acme-App
+        - Acme-DB

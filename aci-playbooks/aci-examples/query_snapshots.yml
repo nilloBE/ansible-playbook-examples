@@ -1,0 +1,27 @@
+---
+- name: test playbook to query configured snapshots in APIC
+  hosts: apic-troy-1
+  connection: local
+  gather_facts: no
+  
+  vars:
+      state: "query"
+
+  tasks:
+    - name: Task 1 - query for snapshots
+      aci_config_snapshot:
+         hostname: "{{ inventory_hostname }}"
+         username: "{{ user }}"
+#         password: "{{ pass }}"
+         private_key: /root/admin.key
+         validate_certs: no
+         state: "{{ state }}"
+      register: task1_query
+
+    - name: Create a list of snapshot filenames
+      set_fact:
+         file_list: "{{ task1_query | json_query('existing[*].configSnapshot.attributes.fileName') }}"
+
+    - name: Debug the previous task
+      debug:
+         var: file_list

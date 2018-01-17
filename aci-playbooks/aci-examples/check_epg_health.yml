@@ -1,0 +1,29 @@
+---
+- name: test playbook to check EPG health
+  hosts: apic-troy-1
+  connection: local
+  gather_facts: no
+  
+  vars_prompt:
+    - name: state
+      prompt: "What to check (present, absent, query)"
+      private: no
+      default: "query"
+
+  vars_files:
+    - vars_check_epg_health.yml
+
+  tasks:
+    - name: COLLECT EPG HEALTH
+      aci_rest:
+         hostname: "{{ inventory_hostname }}"
+         username: "{{ user }}"
+         password: "{{ pass }}"
+         validate_certs: no
+         method: get
+         path: "api/node/mo/uni/tn-{{ tenant_name }}/ap-{{ ap_name }}/epg-{{ epg_name }}.json?rsp-subtree-include=health,fault-count"
+      register: epg_health
+
+    - name: Debug the previous task
+      debug:
+         var: epg_health.imdata.0.fvAEPg.children

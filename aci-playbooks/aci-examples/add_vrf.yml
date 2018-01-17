@@ -1,0 +1,48 @@
+---
+- name: ask for a Tenant and a VRF name and creates them if they do not exists
+  hosts: apic-troy-1
+  connection: local
+  gather_facts: no
+  
+  vars:
+      state: "present"
+
+  vars_prompt:
+    - name: tenant_name
+      prompt: "Name of the tenant"
+      private: no
+      default: MyTenant
+    - name: vrf_name
+      prompt: "Name of the VRF"
+      private: no
+      default: MyVRF
+
+  tasks:
+    - name: Verify tenant exists
+      aci_tenant: 
+         hostname: "{{ inventory_hostname }}"
+         username: "{{ user }}"
+         private_key: /root/admin.key
+         validate_certs: no
+         tenant: "{{ tenant_name }}"
+         state: "{{ state }}"
+      register: tenant_result
+
+    - name: Get current time
+      set_fact: my_date="{{lookup('pipe','date +%Y%m%d%H%M%S')}}"
+
+    - name: Create new VRF
+      aci_vrf:
+         hostname: "{{ inventory_hostname }}"
+         username: "{{ user }}"
+         private_key: /root/admin.key
+         validate_certs: no
+         tenant: "{{ tenant_name }}"
+         vrf: "{{ vrf_name }}"
+         description: "Ansible created VRF at {{ my_date }}"
+         policy_control_preference: enforced
+         policy_control_direction: ingress
+
+    - name: Debug the previous task
+      debug:
+         var: delete_result

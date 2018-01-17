@@ -1,0 +1,46 @@
+---
+- name: test playbook to add subnet to BD
+  hosts: apic-troy-1
+  connection: local
+  gather_facts: no
+  
+  vars_prompt:
+    - name: state
+      prompt: "What to check (present, absent, query)"
+      private: no
+      default: "query"
+
+  vars_files:
+    - vars_add_subnet_to_bd.yml
+
+  tasks:
+    - name: Task 1 - create or update BD 
+      aci_bd:
+         hostname: "{{ inventory_hostname }}"
+         username: "{{ user }}"
+         password: "{{ pass }}"
+         validate_certs: no
+         tenant: "{{ tenant_name }}"
+         vrf: "{{ vrf_name }}"
+         bd: "{{ bd_name }}"
+         enable_routing: True
+         state: "{{ state }}"
+    
+    - name: Task 2 - add subnet to the BD             
+      aci_bd_subnet:
+         hostname: "{{ inventory_hostname }}"
+         username: "{{ user }}"
+         password: "{{ pass }}"
+         tenant: "{{ tenant_name }}"
+         bd: "{{ bd_name }}"
+         subnet_name: "{{ subnet_name }}"
+         gateway: "{{ gateway_address }}"
+         mask: "{{ mask_prefix }}"
+         scope: "{{ scope_list }}"
+         validate_certs: no
+         state: "{{ state }}"
+      register: task1_query
+
+    - name: Debug the previous task
+      debug:
+         var: task1_query

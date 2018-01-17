@@ -1,0 +1,31 @@
+---
+- name: ask for a Tenant and check it if exists
+  hosts: apic-troy-1
+  connection: local
+  gather_facts: no
+  
+  vars_prompt:
+    - name: tenant_name
+      prompt: "Name of the tenant"
+      private: no
+      default: MyTenant
+
+  tasks:
+    - name: Verify tenant exists
+      aci_tenant: 
+         hostname: "{{ inventory_hostname }}"
+         username: "{{ user }}"
+         private_key: /root/admin.key
+         validate_certs: no
+         tenant: "{{ tenant_name }}"
+         state: query
+      register: tenant_result
+    
+    - name: verify result
+      set_fact:
+        tenant_state: "{{ tenant_result | json_query('existing[*].fvTenant.attributes.name') }}"
+
+    - name: print a message if tenant is absent
+      debug:
+        msg: "The tenant {{ tenant_name }} does not exists"
+      when: tenant_state == []

@@ -1,0 +1,47 @@
+---
+# Playbook that triggers a VMM synch for a vCenter based VMM domain
+- name: Use aci_rest to trigger VMM inventory sync
+  hosts: apic-troy-1
+  connection: local
+  gather_facts: no
+  
+  vars_prompt:
+    - name: vmm_name
+      prompt: "Type VMM Domain Name (i.e. VMM-ACI-01)"
+      private: no
+      default: "VMM-ACI-DC1"
+
+    - name: vcenter_fqdn
+      prompt: "Type the name of your vCenter"
+      private: no
+      default: "vcenter6-app-07.nillo.net"
+
+  tasks:
+
+    - name: Configure APIC URL path
+      set_fact:
+        aci_rest_path: "api/node/mo/uni/vmmp-VMware/dom-{{ vmm_name }}/ctrlr-{{ vcenter_fqdn }}.json"
+
+    - name: Configure VMM dn attribute
+      set_fact:
+        vmm_dn_attribute: "uni/vmmp-VMware/dom-{{ vmm_name }}/ctrlr-{{ vcenter_fqdn }}" 
+
+    - name: Trigger VMM Domain Sync 
+      aci_rest:
+         hostname: "{{ inventory_hostname }}"
+         username: "{{ user }}"
+         private_key: /root/admin.key
+         validate_certs: no  
+         method: post
+         use_proxy: no
+         path: "{{ aci_rest_path }}"
+         content:
+           vmmCtrlrP:
+              attributes:
+                dn: "{{ vmm_dn_attribute }}"
+                inventoryTrigSt: "0"
+      register: rest_result
+    
+    - name: print a debug message
+      debug:
+              var: rest_result

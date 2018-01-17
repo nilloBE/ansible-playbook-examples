@@ -1,0 +1,33 @@
+---
+### This playbook takes tenant, ap and epg name from a variables file and queries APIC for endpoints connected to the EPG.
+### It then filters the response to select the IP addresses of connected endpoints and returns it on a list.
+#
+- name: test playbook to obtain and print the list of IP addresses of connected endpoints
+  hosts: apic-troy-1
+  connection: local
+  gather_facts: no
+
+  vars_files:
+    - vars_get_epg_endpoints.yaml
+
+  tasks:
+    - name: COLLECT EPG Endpoint List via REST
+      aci_rest:
+         hostname: "{{ inventory_hostname }}"
+         username: "{{ user }}"
+         private_key: /root/admin.key
+         validate_certs: no
+         use_proxy: no
+         method: get
+         path: "mqapi2/deployment.query.json?mode=epgtoceps&epgdn=uni/tn-{{ tenant_name }}/ap-{{ ap_name }}/epg-{{ epg_name }}"
+      register: epg_endpoints
+    
+    # Print the list of IP Addresses
+
+    - name: CREATE A LIST OF JUST IP ADD USING A QUERY FILTER
+      set_fact:
+         ip_list: "{{ epg_endpoints | json_query('imdata[*].fvCEp.attributes.ip') }}"
+
+    - name: Debug the previous task
+      debug:
+         var: ip_list

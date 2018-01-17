@@ -1,0 +1,8 @@
+---
+# Variables used to get EPG endpoints
+#
+tenant_name: common
+vrf_name: default
+bd_name: BD3
+ap_name: OpenShift
+epg_name: os-cluster-mgmt

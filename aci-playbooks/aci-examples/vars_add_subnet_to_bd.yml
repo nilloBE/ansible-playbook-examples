@@ -1,0 +1,12 @@
+---
+# Variables used to test adding a subnet to BD
+#
+tenant_name: T1
+vrf_name: VRF1
+bd_name: BD3
+subnet_name: my-subnet-name
+gateway_address: 11.11.11.1
+mask_prefix: 24
+scope_list:
+   - private
+   - shared
