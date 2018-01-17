@@ -1,0 +1,46 @@
+---
+# This PLaybook creates a 3-tier App in an isolated routing space (VRF) with WAN/Internet access. It may use an existing
+# tenant or create a new one. Each tier will have one BD and one EPG. The EPGs are mapped to a provided VMM domain.
+# The Web Subnet is announced via an existing L3Out interface.
+#
+- name: Deploy 3 Tier App with EPG/BD inside a VRF
+  hosts: apic-troy-1
+  connection: local
+  gather_facts: false
+
+  vars_prompt:
+    - name: "tenant_name"
+      prompt: "Enter tenant name:"
+      private: no
+      default: "MyNewTenant"
+    - name: "vrf_name"
+      prompt: "Enter VRF name:"
+      private: no
+      default: "VRF1"
+    - name: "application_profile"
+      prompt: "Enter Application Profile Name:"
+      private: no
+      default: "APP1"
+    - name: "vmm_domain"
+      promot: "Enter VMM Domain Name"
+      private: no
+      default: "VMM-ACI-DC1"
+    - name: "number_of_networks"
+      promot: "Enter Number of Networks"
+      private: no
+      default: "3"
+    - name: "l3_out"
+      prompt: "Enter Name of L3Out"
+      private: no
+      default: "OSPF_CSR1KV-WAN"
+    - name: "external_contract"
+      prompt: "Enter name of contract to External EPG"
+      default: "allow-internet-access"
+    - name: "state"
+      promot: "Confirm action, present or absent"
+      private: no
+      default: "present"
+
+  tasks:
+        - include: create-app-tasks.yml param="{{item}}"
+          with_sequence: start=1 end="{{ number_of_networks }}"

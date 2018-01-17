@@ -1,0 +1,199 @@
+---
+# This PLaybook is a list of tasks to create 3 tier app inside an isolated routing space (i.e. VRF). It may use an existing
+# tenant or create a new one. Each tier will have one BD and one EPG. The EPGs are mapped to a provided VMM domain.
+# Each BD receives a /24 subnet. The Web Tier subnet is public and shared, and the subnets for App and DB are private.
+# The Web-Tier EPG is associated to an L3Out external EPG via a user-provided contract.
+#
+    - name: verify tenant exists or create one
+      aci_tenant:
+        hostname: "{{ inventory_hostname }}"
+        username: "{{ user }}"
+        password: "{{ pass }}"
+        validate_certs: False
+        state: "{{ state }}"
+        tenant: "{{ tenant_name }}"
+        description: 'tenant created or updated by Ansible'
+
+    - name: ensure context/VRF for tenant exists (private network)
+      aci_vrf:
+        hostname: "{{ inventory_hostname }}"
+        username: "{{ user }}"
+        password: "{{ pass }}"
+        validate_certs: False
+        state: "{{ state }}"
+        vrf: "{{ vrf_name }}-{{ param }}"
+        tenant: "{{ tenant_name }}"
+        descr: "Ansible create VRF"
+        policy_control_preference: enforced
+        policy_control_direction: ingress
+
+    - name: create bridge domain for Web-Tier
+      aci_bd:
+        hostname: "{{ inventory_hostname }}"
+        username: "{{ user }}"
+        password: "{{ pass }}"
+        validate_certs: False
+        state: "{{ state }}"
+        tenant: "{{ tenant_name }}"
+        bd: "BD-Web-Tier-{{ param }}"
+        vrf: "{{ vrf_name }}-{{ param }}"
+        enable_routing: yes
+        arp_flooding: no
+        l2_unknown_unicast: flood
+
+    - name: add subnet to web-tier BD
+      aci_bd_subnet:
+        hostname: "{{ inventory_hostname }}"
+        username: "{{ user }}"
+        password: "{{ pass }}"
+        validate_certs: False
+        state: "{{ state }}"
+        tenant: "{{ tenant_name }}"
+        bd: "BD-Web-Tier-{{ param }}"
+        gateway: "10.{{ param }}.1.254"
+        mask: 24
+        scope: "public"
+
+    - name: associate Web-Tier-BD with L3Out in common tenant
+      aci_bd_to_l3out:
+        hostname: "{{ inventory_hostname }}"
+        username: "{{ user }}"
+        password: "{{ pass }}"
+        validate_certs: False
+        state: "{{ state }}"
+        tenant: "{{ tenant_name }}"
+        bd:  "BD-Web-Tier-{{ param }}"
+        l3out: "{{ l3_out }}"
+
+    - name: create bridge domain for App-Tier
+      aci_bd:
+        hostname: "{{ inventory_hostname }}"
+        username: "{{ user }}"
+        password: "{{ pass }}"
+        validate_certs: False
+        state: "{{ state }}"
+        tenant: "{{ tenant_name }}"
+        bd: "BD-App-Tier-{{ param }}"
+        vrf: "{{ vrf_name }}-{{ param }}"
+        enable_routing: yes
+        arp_flooding: no
+        l2_unknown_unicast: flood
+
+    - name: add subnet to App-tier BD
+      aci_bd_subnet:
+        hostname: "{{ inventory_hostname }}"
+        username: "{{ user }}"
+        password: "{{ pass }}"
+        validate_certs: False
+        state: "{{ state }}"
+        tenant: "{{ tenant_name }}"
+        bd: "BD-App-Tier-{{ param }}"
+        gateway: "10.{{ param }}.2.254"
+        mask: 24
+        scope: "public"
+
+    - name: create bridge domain for DB-Tier
+      aci_bd:
+        hostname: "{{ inventory_hostname }}"
+        username: "{{ user }}"
+        password: "{{ pass }}"
+        validate_certs: False
+        state: "{{ state }}"
+        tenant: "{{ tenant_name }}"
+        bd: "BD-DB-Tier-{{ param }}"
+        vrf: "{{ vrf_name }}-{{ param }}"
+        enable_routing: yes
+        arp_flooding: no
+        l2_unknown_unicast: flood
+
+    - name: add subnet to DB-tier BD
+      aci_bd_subnet:
+        hostname: "{{ inventory_hostname }}"
+        username: "{{ user }}"
+        password: "{{ pass }}"
+        validate_certs: False
+        state: "{{ state }}"
+        tenant: "{{ tenant_name }}"
+        bd: "BD-DB-Tier-{{ param }}"
+        gateway: "10.{{ param }}.3.254"
+        mask: 24
+        scope: "private"
+    
+    - name: Add Application Profile to group EPGs
+      aci_ap:
+        hostname: "{{ inventory_hostname }}"
+        username: "{{ user }}"
+        password: "{{ pass }}"
+        validate_certs: False
+        state: "{{ state }}"
+        tenant: "{{ tenant_name }}"
+        ap: "{{ application_profile }}-{{ param }}"
+
+    - name: create EPG for Web-Tier
+      aci_epg:
+        hostname: "{{ inventory_hostname }}"
+        username: "{{ user }}"
+        password: "{{ pass }}"
+        validate_certs: False
+        state: "{{ state }}"
+        tenant: "{{ tenant_name }}"
+        epg: "Web-{{ param }}"
+        ap: "{{ application_profile }}-{{ param }}"
+        bd: "BD-Web-Tier-{{ param }}"
+    
+    - name: add contract for Web-Tier to access internet
+      aci_epg_to_contract:
+        hostname: "{{ inventory_hostname }}"
+        username: "{{ user }}"
+        password: "{{ pass }}"
+        validate_certs: False
+        state: "{{ state }}"
+        tenant: "{{ tenant_name }}"
+        epg: "Web-{{ param }}"
+        ap: "{{ application_profile }}-{{ param }}"
+        contract_type: consumer
+        contract:  "{{ external_contract }}"
+
+    - name: create EPG for App-Tier
+      aci_epg:
+        hostname: "{{ inventory_hostname }}"
+        username: "{{ user }}"
+        password: "{{ pass }}"
+        validate_certs: False
+        state: "{{ state }}"
+        tenant: "{{ tenant_name }}"
+        epg: "App-{{ param }}"
+        ap: "{{ application_profile }}-{{ param }}"
+        bd: "BD-App-Tier-{{ param }}"
+
+    - name: create EPG for DB-Tier
+      aci_epg:
+        hostname: "{{ inventory_hostname }}"
+        username: "{{ user }}"
+        password: "{{ pass }}"
+        validate_certs: False
+        state: "{{ state }}"
+        tenant: "{{ tenant_name }}"
+        epg: "DB-{{ param }}"
+        ap: "{{ application_profile }}-{{ param }}"
+        bd: "BD-DB-Tier-{{ param }}"
+
+    - name: Deploying EPG to VMM Domain, creating PortGroups ...
+      aci_epg_to_domain:
+        hostname: "{{ inventory_hostname }}"
+        username: "{{ user }}"
+        password: "{{ pass }}"
+        validate_certs: False
+        state: "{{ state }}"
+        tenant: "{{ tenant_name }}"
+        ap:  "{{ application_profile }}-{{ param }}"
+        epg:  "{{ inner_item }}"
+        domain: "{{ vmm_domain }}"
+        domain_type: vmm
+        vm_provider: vmware
+      with_items:
+          - "Web-{{ param }}"
+          - "App-{{ param }}"
+          - "DB-{{ param }}"
+      loop_control:
+        loop_var: inner_item
