@@ -1,0 +1,15 @@
+---
+#  
+#  Sample playbook for creating a VM on a vSphere Cluster by cloning from a template.
+#
+- name: Create a VM from a Template and place into a folder, connect it on a given dvPortGroup
+  hosts: all
+  gather_facts: false
+  connection: local
+  
+  vars_files: 
+     - ./vars/vcenter-info.yml
+
+  roles:
+  - { role: "clone-vm-vmware", ip_address: "10.40.40.100" } 
+
