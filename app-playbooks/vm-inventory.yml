@@ -1,0 +1,3 @@
+[web-vms]
+haproxy-01 ansible_host='10.40.40.100' disk='8' datastore='iSCSI-3' network='VM Network' memory='4096' cpucount='2' osid='centos64Guest'
+

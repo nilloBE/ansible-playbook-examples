@@ -1,0 +1,102 @@
+---
+# tasks file for create-acme-ap
+- name: Get current time
+  set_fact: my_date="{{lookup('pipe','date +%Y%m%d%H%M%S')}}"
+
+- name: Create or update base application profiles
+  aci_ap:
+     hostname: "{{ inventory_hostname }}"
+     username: "{{ user }}"
+     private_key: /root/admin.key
+     validate_certs: no
+     tenant: "{{ tenant_name }}"
+     description: "AP created or updated at {{ my_date }}"
+     ap: "{{ item }}"
+     state: "{{ state }}"
+  with_items:
+     - AcmeInfra
+     - AcmeNetworks
+
+- name: Create base EPGs for Infra
+  aci_epg:
+     hostname: "{{ inventory_hostname }}"
+     username: "{{ user }}"
+     private_key: /root/admin.key
+     validate_certs: no
+     tenant: "{{ tenant_name }}"
+     description: "EPG created or updated at {{ my_date }}"
+     ap: AcmeInfra
+     epg: "{{ item }}"
+     intra_epg_isolation: unenforced
+     bd: "{{ infra_bd_name }}"
+     state: "{{ state }}"
+  with_items:
+     - DNS
+     - DHCP
+
+- name: Create base EPGs for Acme Web Applications
+  aci_epg:
+     hostname: "{{ inventory_hostname }}"
+     username: "{{ user }}"
+     private_key: /root/admin.key
+     validate_certs: no
+     tenant: "{{ tenant_name }}"
+     description: "EPG created or updated at {{ my_date }}"
+     ap: "AcmeNetworks"
+     epg: "WebNetwork"
+     bd: "{{ web_bd_name }}"
+     intra_epg_isolation: enforced
+     fwd_control: proxy-arp
+     state: "{{ state }}"
+
+
+- name: Create base EPGs for Acme DB Applications
+  aci_epg:
+     hostname: "{{ inventory_hostname }}"
+     username: "{{ user }}"
+     private_key: /root/admin.key
+     validate_certs: no
+     tenant: "{{ tenant_name }}"
+     description: "EPG created or updated at {{ my_date }}"
+     ap: "AcmeNetworks"
+     epg: "DBNetwork"
+     bd: "{{ db_bd_name }}"
+     intra_epg_isolation: enforced
+     fwd_control: proxy-arp
+     state: "{{ state }}"
+
+- name: Associate Web EPG to VMM Domains
+  aci_epg_to_domain:
+     hostname: "{{ inventory_hostname }}"
+     username: "{{ user }}"
+     private_key: /root/admin.key
+     validate_certs: no
+     tenant: "{{ tenant_name }}"
+     ap: "AcmeNetworks"
+     epg: "WebNetwork"
+     domain: "{{ item }}"
+     domain_type: vmm
+     vm_provider: vmware
+     resolution_immediacy: immediate
+     deploy_immediacy: immediate
+     allow_useg: useg
+     state: "{{ state }}"
+  with_items:
+     - "{{ vmm_domain_name_dc1 }}"
+     - "{{ vmm_domain_name_dc2 }}"
+
+- name: Associate DB to Phys Domains
+  aci_epg_to_domain:
+     hostname: "{{ inventory_hostname }}"
+     username: "{{ user }}"
+     private_key: /root/admin.key
+     validate_certs: no
+     tenant: "{{ tenant_name }}"
+     ap: "AcmeNetworks"
+     epg: "DBNetwork"
+     domain: "{{ physdom_name }}"
+     domain_type: phys
+     resolution_immediacy: immediate
+     deploy_immediacy: immediate
+     state: "{{ state }}"
+

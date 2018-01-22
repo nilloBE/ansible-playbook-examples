@@ -11,5 +11,5 @@
      - ./vars/vcenter-info.yml
 
   roles:
-  - { role: "clone-vm-vmware", ip_address: "10.40.40.100" } 
+  - { role: "clone-vm-vmware", ip_address: "{{ ansible_host }}" } 
 

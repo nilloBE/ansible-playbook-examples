@@ -1,0 +1,9 @@
+---
+# Basic variables to setup HAProxy
+frontend_name: http_front
+frontend_port: 80
+backend_name: http_back
+stats_ports: 8181
+stats_user: cisco
+stats_password: cisco
+

@@ -1,0 +1,15 @@
+---
+#  
+#  Sample playbook for installing an HAProxy load balancer on a Centos7 VM
+#
+- name: Install HAProxy on a CentOS7 VM
+  hosts: haproxy*
+  gather_facts: true
+  become: true
+  
+  vars_files: 
+     - ./vars_general.yml
+
+  roles:
+  - { role: "haproxy" } 
+

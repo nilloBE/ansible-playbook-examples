@@ -1,0 +1,48 @@
+---
+# tasks file for haproxy
+  - name: copy the resolv.conf file
+    copy:
+      src: ./files/resolv.conf
+      dest: /etc/resolv.conf
+      owner: root
+      group: root
+      mode: 0644
+
+  - name: install haproxy
+    yum:
+       name: haproxy
+       state: present
+
+  - name: move default config file
+    copy:
+       src: /etc/haproxy/haproxy.cfg
+       dest: /etc/haproxy/haproxy.cfg.orig
+       remote_src: yes
+
+  - name: copy the basic config file
+    template:
+       src: ./templates/haproxy.cfg.j2
+       dest: /etc/haproxy/haproxy.cfg
+       owner: haproxy
+       group: haproxy
+       mode: 0644
+
+  - name: open centos firewalld ports for HAProxy
+    firewalld:
+       port: "{{ item }}/tcp"
+       permanent: true
+       state: enabled
+    with_items:
+       - "{{ frontend_port }}"
+       - "{{ stats_ports }}"
+
+  - name: disable SELINUX (conflict with haproxy)
+    selinux:
+       state: disabled
+
+  - name: starting HaProxy
+    systemd:
+       name: haproxy
+       state: started
+       enabled: yes
+       masked: no

@@ -1,0 +1,108 @@
+---
+# tasks file for create-acme-networks
+- name: Get current time
+  set_fact: my_date="{{lookup('pipe','date +%Y%m%d%H%M%S')}}"
+
+- name: Ensure user tenant exists 
+  aci_tenant:
+     hostname: "{{ inventory_hostname }}"
+     username: "{{ user }}"
+     private_key: /root/admin.key
+     validate_certs: no
+     tenant: "{{ tenant_name }}"
+     description: "Tenant created or updated at {{ my_date }}"
+     state: "{{ state }}"
+
+- name: Ensure VRF exists
+  aci_vrf: 
+     hostname: "{{ inventory_hostname }}"
+     username: "{{ user }}"
+     private_key: /root/admin.key
+     validate_certs: no
+     description: "VRF created or updated at {{ my_date }}"
+     tenant: "{{ tenant_name }}"
+     vrf: "{{ vrf_name }}"
+     policy_control_preference: "{{ vrf_policy }}"
+     state: "{{ state }}"
+
+- name: Ensure BDs exists
+  aci_bd:
+     hostname: "{{ inventory_hostname }}"
+     username: "{{ user }}"
+     private_key: /root/admin.key
+     validate_certs: no
+     description: "BD created or updated at {{ my_date }}"
+     tenant: "{{ tenant_name }}"
+     vrf: "{{ vrf_name }}"
+     bd: "{{ item }}"
+     enable_routing: yes
+     use_proxy: yes
+     l2_unknown_unicast: proxy
+     arp_flooding: no
+     l3_unknown_multicast: flood
+     ip_learning: yes
+     multi_dest: bd-flood
+     state: "{{ state }}"
+  with_items:
+     - "{{ infra_bd_name }}"
+     - "{{ web_bd_name }}"
+     - "{{ db_bd_name }}"
+
+- name: Adding subnet to BD infra
+  aci_bd_subnet:
+     hostname: "{{ inventory_hostname }}"
+     username: "{{ user }}"
+     private_key: /root/admin.key
+     validate_certs: no
+     description: "Subnet created or updated at {{ my_date }}"
+     tenant: "{{ tenant_name }}"
+     bd: "{{ infra_bd_name }}"
+     gateway: "{{ infra_bd_subnet }}"
+     mask: 24
+     scope: 
+       - private
+       - shared
+     state: "{{ state }}"
+ 
+- name: Adding subnet to BD for DB
+  aci_bd_subnet:
+     hostname: "{{ inventory_hostname }}"
+     username: "{{ user }}"
+     private_key: /root/admin.key
+     validate_certs: no
+     description: "Subnet created or updated at {{ my_date }}"
+     tenant: "{{ tenant_name }}"
+     bd: "{{ db_bd_name }}"
+     gateway: "{{ db_bd_subnet }}"
+     mask: 24
+     scope:
+       - private
+       - shared
+     state: "{{ state }}"
+
+- name: Adding subnet to BD for Web
+  aci_bd_subnet:
+     hostname: "{{ inventory_hostname }}"
+     username: "{{ user }}"
+     private_key: /root/admin.key
+     validate_certs: no
+     description: "Subnet created or updated at {{ my_date }}"
+     tenant: "{{ tenant_name }}"
+     bd: "{{ web_bd_name }}"
+     gateway: "{{ web_bd_subnet }}"
+     mask: 24
+     scope:
+       - public
+       - shared
+     state: "{{ state }}"
+
+- name: Associating L3Out to Web BD
+  aci_bd_to_l3out:
+     hostname: "{{ inventory_hostname }}"
+     username: "{{ user }}"
+     private_key: /root/admin.key
+     validate_certs: no
+     tenant: "{{ tenant_name }}"
+     bd: "{{ web_bd_name }}"
+     l3out: "{{ l3out_name }}"
+     state: "{{ state }}"
