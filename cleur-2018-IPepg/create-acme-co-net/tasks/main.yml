@@ -1,0 +1,129 @@
+---
+# tasks file for create-acme-networks
+- name: Get current time
+  set_fact: my_date="{{lookup('pipe','date +%Y%m%d%H%M%S')}}"
+
+- name: Ensure user tenant exists 
+  aci_tenant:
+     hostname: "{{ inventory_hostname }}"
+     username: "{{ user }}"
+     private_key: /root/admin.key
+     validate_certs: no
+     tenant: "{{ tenant_name }}"
+     description: "Tenant created or updated at {{ my_date }}"
+     state: "{{ state }}"
+
+- name: export ansible contract from common tenant
+  aci_rest:
+     hostname: "{{ inventory_hostname }}"
+     username: "{{ user }}"
+     private_key: /root/admin.key
+     validate_certs: no
+     use_proxy: no
+     method: post
+     path: "api/node/mo/uni/tn-{{ tenant_name}}/cif-{{ ansible_contract }}.json"
+     content: 
+        vzCPIf:
+           attributes:
+              dn: "uni/tn-{{ tenant_name }}/cif-{{ ansible_contract }}"
+              name: "{{ ansible_contract }}"
+              status: "created,modified"
+           children:
+              - vzRsIf:
+                  attributes:
+                     tDn: "uni/tn-common/brc-{{ ansible_contract }}"
+                     status: "created,modified"
+  when: state == "present"
+
+- name: Ensure VRF exists
+  aci_vrf: 
+     hostname: "{{ inventory_hostname }}"
+     username: "{{ user }}"
+     private_key: /root/admin.key
+     validate_certs: no
+     description: "VRF created or updated at {{ my_date }}"
+     tenant: "{{ tenant_name }}"
+     vrf: "{{ vrf_name }}"
+     policy_control_preference: "{{ vrf_policy }}"
+     state: "{{ state }}"
+
+- name: Ensure BDs exists
+  aci_bd:
+     hostname: "{{ inventory_hostname }}"
+     username: "{{ user }}"
+     private_key: /root/admin.key
+     validate_certs: no
+     description: "BD created or updated at {{ my_date }}"
+     tenant: "{{ tenant_name }}"
+     vrf: "{{ vrf_name }}"
+     bd: "{{ item }}"
+     enable_routing: yes
+     use_proxy: yes
+     l2_unknown_unicast: proxy
+     arp_flooding: no
+     l3_unknown_multicast: flood
+     ip_learning: yes
+     multi_dest: bd-flood
+     state: "{{ state }}"
+  with_items:
+     - "{{ infra_bd_name }}"
+     - "{{ server_bd_name }}"
+
+- name: Adding subnet to BD infra
+  aci_bd_subnet:
+     hostname: "{{ inventory_hostname }}"
+     username: "{{ user }}"
+     private_key: /root/admin.key
+     validate_certs: no
+     description: "Subnet created or updated at {{ my_date }}"
+     tenant: "{{ tenant_name }}"
+     bd: "{{ infra_bd_name }}"
+     gateway: "{{ infra_bd_subnet }}"
+     mask: 24
+     scope: 
+       - private
+       - shared
+     state: "{{ state }}"
+ 
+- name: Adding subnet to server BD
+  aci_bd_subnet:
+     hostname: "{{ inventory_hostname }}"
+     username: "{{ user }}"
+     private_key: /root/admin.key
+     validate_certs: no
+     description: "Subnet created or updated at {{ my_date }}"
+     tenant: "{{ tenant_name }}"
+     bd: "{{ server_bd_name }}"
+     gateway: "{{ epg2_bd_subnet }}"
+     mask: 24
+     scope:
+       - private
+       - shared
+     state: "{{ state }}"
+
+- name: Adding public subnet to server BD
+  aci_bd_subnet:
+     hostname: "{{ inventory_hostname }}"
+     username: "{{ user }}"
+     private_key: /root/admin.key
+     validate_certs: no
+     description: "Subnet created or updated at {{ my_date }}"
+     tenant: "{{ tenant_name }}"
+     bd: "{{ server_bd_name }}"
+     gateway: "{{ epg1_bd_subnet }}"
+     mask: 24
+     scope:
+       - public
+       - shared
+     state: "{{ state }}"
+
+- name: Associating L3Out to server BD
+  aci_bd_to_l3out:
+     hostname: "{{ inventory_hostname }}"
+     username: "{{ user }}"
+     private_key: /root/admin.key
+     validate_certs: no
+     tenant: "{{ tenant_name }}"
+     bd: "{{ server_bd_name }}"
+     l3out: "{{ l3out_name }}"
+     state: "{{ state }}"

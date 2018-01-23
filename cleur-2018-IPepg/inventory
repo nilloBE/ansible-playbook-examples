@@ -1,0 +1,16 @@
+[local]
+localhost
+
+[APIC]
+apic-troy-1                     # single APIC in system- can also use IP if no DNS or /etc/hosts isn't setup
+
+[web-vm]
+web1 ansible_host='10.41.41.10' disk='8' datastore='iSCSI-3' network='VM Network' memory='4096' cpucount='2' osid='centos64Guest'
+web2 ansible_host='10.41.41.11' disk='8' datastore='iSCSI-3' network='VM Network' memory='4096' cpucount='2' osid='centos64Guest'
+
+[db-vm]
+db1 ansible_host='10.51.51.10' disk='8' datastore='iSCSI-3' network='VM Network' memory='4096' cpucount='2' osid='centos64Guest'
+db2 ansible_host='10.51.51.11' disk='8' datastore='iSCSI-3' network='VM Network' memory='4096' cpucount='2' osid='centos64Guest'
+
+[all:vars]
+user = 'ansible-server'

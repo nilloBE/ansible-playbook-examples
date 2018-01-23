@@ -1,0 +1,157 @@
+---
+# tasks file for create-acme-ap
+- name: Get current time
+  set_fact: my_date="{{lookup('pipe','date +%Y%m%d%H%M%S')}}"
+
+- name: Create or update base application profiles
+  aci_ap:
+     hostname: "{{ inventory_hostname }}"
+     username: "{{ user }}"
+     private_key: /root/admin.key
+     validate_certs: no
+     tenant: "{{ tenant_name }}"
+     description: "AP created or updated at {{ my_date }}"
+     ap: "{{ item }}"
+     state: "{{ state }}"
+  with_items:
+     - AcmeInfra
+     - AcmeNetworks
+
+- name: Create base EPGs for Infra
+  aci_epg:
+     hostname: "{{ inventory_hostname }}"
+     username: "{{ user }}"
+     private_key: /root/admin.key
+     validate_certs: no
+     tenant: "{{ tenant_name }}"
+     description: "EPG created or updated at {{ my_date }}"
+     ap: AcmeInfra
+     epg: "{{ item }}"
+     intra_epg_isolation: unenforced
+     bd: "{{ infra_bd_name }}"
+     state: "{{ state }}"
+  with_items:
+     - DNS
+     - DHCP
+
+- name: Create base EPG1 for Acme Applications
+  aci_epg:
+     hostname: "{{ inventory_hostname }}"
+     username: "{{ user }}"
+     private_key: /root/admin.key
+     validate_certs: no
+     tenant: "{{ tenant_name }}"
+     description: "EPG created or updated at {{ my_date }}"
+     ap: "AcmeNetworks"
+     epg: "EPG1"
+     bd: "{{ server_bd_name }}"
+     intra_epg_isolation: enforced
+     fwd_control: proxy-arp
+     state: "{{ state }}"
+
+
+- name: Create base EPG2 for Acme DB Applications
+  aci_epg:
+     hostname: "{{ inventory_hostname }}"
+     username: "{{ user }}"
+     private_key: /root/admin.key
+     validate_certs: no
+     tenant: "{{ tenant_name }}"
+     description: "EPG created or updated at {{ my_date }}"
+     ap: "AcmeNetworks"
+     epg: "EPG2"
+     bd: "{{ server_bd_name }}"
+     intra_epg_isolation: enforced
+     fwd_control: proxy-arp
+     state: "{{ state }}"
+
+- name: Associate EPG1 to VMM Domains
+  aci_epg_to_domain:
+     hostname: "{{ inventory_hostname }}"
+     username: "{{ user }}"
+     private_key: /root/admin.key
+     validate_certs: no
+     tenant: "{{ tenant_name }}"
+     ap: "AcmeNetworks"
+     epg: "EPG1"
+     domain: "{{ item }}"
+     domain_type: vmm
+     vm_provider: vmware
+     resolution_immediacy: immediate
+     deploy_immediacy: immediate
+     allow_useg: useg
+     state: "{{ state }}"
+  with_items:
+     - "{{ vmm_domain_name_dc1 }}"
+     - "{{ vmm_domain_name_dc2 }}"
+
+- name: Associate EPG2 to VMM Domains
+  aci_epg_to_domain:
+     hostname: "{{ inventory_hostname }}"
+     username: "{{ user }}"
+     private_key: /root/admin.key
+     validate_certs: no
+     tenant: "{{ tenant_name }}"
+     ap: "AcmeNetworks"
+     epg: "EPG2"
+     domain: "{{ item }}"
+     domain_type: vmm
+     vm_provider: vmware
+     resolution_immediacy: immediate
+     deploy_immediacy: immediate
+     allow_useg: useg
+     state: "{{ state }}"
+  with_items:
+     - "{{ vmm_domain_name_dc1 }}"
+     - "{{ vmm_domain_name_dc2 }}"
+
+- name: Associate EPG2 to Phys Domain
+  aci_epg_to_domain:
+     hostname: "{{ inventory_hostname }}"
+     username: "{{ user }}"
+     private_key: /root/admin.key
+     validate_certs: no
+     tenant: "{{ tenant_name }}"
+     ap: "AcmeNetworks"
+     epg: "EPG2"
+     domain: "{{ physdom_name }}"
+     domain_type: phys
+     resolution_immediacy: immediate
+     deploy_immediacy: immediate
+     state: "{{ state }}"
+
+# Add contracts to EPGs. Normally this would use aci_epg_to_contract module, but currently you cannot add consumed contract
+# interfaces nor can you associate to contracts from a different tenant (like commmon tenant). Therefore we use aci_rest.
+
+- name: adding access to the proxy for Web and BD EPGs
+  aci_rest:
+     hostname: "{{ inventory_hostname }}"
+     username: "{{ user }}"
+     private_key: /root/admin.key
+     validate_certs: no
+     use_proxy: no
+     method: post
+     path: api/mo/uni.json
+     content:
+        fvTenant:
+           attributes:
+              name: "{{ tenant_name }}"
+           children:
+           - fvAp:
+              attributes: 
+                 name: "AcmeNetworks"
+              children:
+              - fvAEPg:
+                 attributes:
+                    name: "{{ item }}"
+                 children: 
+                 - fvRsConsIf:
+                    attributes:
+                       tnVzCPIfName: "{{ ansible_contract }}"
+                 - fvRsCons:
+                    attributes:
+                       tnVzBrCPName: "{{ proxy_contract }}"
+  with_items:
+    - EPG1
+    - EPG2
+  when: state == "present"

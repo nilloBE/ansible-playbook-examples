@@ -1,0 +1,81 @@
+---
+# tasks file for create-uepg.yml
+- name: create uEPG for first subnet
+  aci_rest:
+     hostname: "{{ inventory_hostname }}"
+     username: "{{ user }}"
+     private_key: /root/admin.key
+     validate_certs: no
+     use_proxy: no
+     method: post
+     path: "api/mo/uni.json"
+     content:
+        fvTenant:
+           attributes:
+              name: "{{ tenant_name }}"
+           children:
+           - fvAp:
+              attributes:
+                 name: "AcmeNetworks"
+              children:
+              - fvAEPg:
+                 attributes:
+                    name: "net-41"
+                 children:
+                 - fvRsSecInherited:
+                    attributes:
+                       tDn: "uni/tn-{{ tenant_name }}/ap-AcmeNetworks/epg-EPG1"
+                 - fvRsDomAtt:
+                    attributes:
+                       tDn: "{{ vmm_domain_dn_dc1 }}"
+                       instrImedcy: immediate
+                       resImedcy: immediate
+                 - fvRsDomAtt:
+                    attributes:
+                       tDn: "{{ vmm_domain_dn_dc2 }}"
+                       instrImedcy: immediate
+                       resImedcy: immediate
+                 - fvRsBd:
+                    attributes:
+                       tnFvBDName: "{{ server_bd_name }}"
+  when: state == "present"
+
+- name: create uEPG for second subnet
+  aci_rest:
+     hostname: "{{ inventory_hostname }}"
+     username: "{{ user }}"
+     private_key: /root/admin.key
+     validate_certs: no
+     use_proxy: no
+     method: post
+     path: "api/mo/uni.json"
+     content:
+        fvTenant:
+           attributes:
+              name: "{{ tenant_name }}"
+           children:
+           - fvAp:
+              attributes:
+                 name: "AcmeNetworks"
+              children:
+              - fvAEPg:
+                 attributes:
+                    name: "net-51"
+                 children:
+                 - fvRsSecInherited:
+                    attributes:
+                       tDn: "uni/tn-{{ tenant_name }}/ap-AcmeNetworks/epg-EPG2"
+                 - fvRsDomAtt:
+                    attributes:
+                       tDn: "{{ vmm_domain_dn_dc1 }}"
+                       instrImedcy: immediate
+                       resImedcy: immediate
+                 - fvRsDomAtt:
+                    attributes:
+                       tDn: "{{ vmm_domain_dn_dc2 }}"
+                       instrImedcy: immediate
+                       resImedcy: immediate
+                 - fvRsBd:
+                    attributes:
+                       tnFvBDName: "{{ server_bd_name }}"
+  when: state == "present"

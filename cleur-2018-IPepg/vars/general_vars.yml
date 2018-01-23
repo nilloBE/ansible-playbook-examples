@@ -1,0 +1,19 @@
+# General variables
+state: present
+tenant_name: AcmeCo
+vrf_name: AcmeVRF
+vrf_policy: enforced
+infra_bd_name: acme-infra
+server_bd_name: acme-bd
+infra_bd_subnet: "10.31.31.254"
+epg1_bd_subnet: "10.41.41.254"
+epg2_bd_subnet: "10.51.51.254"
+l3out_name: "OSPF_CSR1KV-WAN"
+vmm_domain_dn_dc1: uni/vmmp-VMware/dom-VMM-ACI-DC1
+vmm_domain_dn_dc2: uni/vmmp-VMware/dom-VMM-ACI-DC2
+vmm_domain_name_dc1: VMM-ACI-DC1
+vmm_domain_name_dc2: VMM-ACI-DC2
+vmm_type: vmware
+physdom_name: phys
+proxy_contract: "proxy-access"
+ansible_contract: "Ansible-Provisioning"

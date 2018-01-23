@@ -1,0 +1,45 @@
+--- 
+### This playbook calls on various roles to configure a new ACI tenant and create various VRFs and BDs.
+# It creates a Web and App BD and EPGs with associated subnets. It then launches a number of Virtual Machines on each of the 
+# subnets using static IP address assignement for each of them.
+# This playbook assumes Ansible 2.5 and ACI 3.1(1i).
+#
+- name: set up environment in ACI for IP EPG demo
+  hosts: apic-troy-1
+  connection: local
+  gather_facts: no
+
+  vars_files:
+    - ./vars/general_vars.yml
+    - ./vars/vcenter-info.yml
+
+  roles: 
+  - { role: "create-acme-co-net" }
+  - { role: "base-contracts" }
+  - { role: "create-acme-ap" }
+  - { role: "create-uepg.yml" }
+
+- name: launch web virtual machines
+  hosts: web-vm
+  gather_facts: no
+  connection: local
+
+  vars_files:
+    - ./vars/general_vars.yml
+    - ./vars/vcenter-info.yml
+
+  roles:
+  - { role: "clone-vm-vmware", ip_address: "{{ ansible_host }}", ip_gateway: "{{ epg1_bd_subnet }}", dvportgroup_name: "{{ tenant_name}}|AcmeNetworks|EPG1" }
+
+- name: launch DB virtual machines
+  hosts: db-vm
+  gather_facts: no
+  connection: local
+
+  vars_files:
+    - ./vars/general_vars.yml
+    - ./vars/vcenter-info.yml
+
+  roles:
+  - { role: "clone-vm-vmware", ip_address: "{{ ansible_host }}", ip_gateway: "{{ epg2_bd_subnet }}", dvportgroup_name: "{{ tenant_name}}|AcmeNetworks|EPG2" }
+

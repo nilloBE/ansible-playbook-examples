@@ -1,0 +1,5 @@
+---
+# vars file for base-contracts
+state: present
+tenant_name: AcmeCo
+vrf_name: AcmeCoVRF
