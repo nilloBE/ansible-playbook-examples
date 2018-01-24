@@ -120,6 +120,41 @@
      deploy_immediacy: immediate
      state: "{{ state }}"
 
+# Mapping physical paths to EPG2. There is currently no module to do this.
+
+- name: adding static paths to EPG2
+  aci_rest:
+     hostname: "{{ inventory_hostname }}"
+     username: "{{ user }}"
+     private_key: /root/admin.key
+     validate_certs: no
+     use_proxy: no
+     method: post
+     path: api/mo/uni.json
+     content:
+        fvTenant:
+           attributes:
+              name: "{{ tenant_name }}"
+           children:
+           - fvAp:
+              attributes:
+                 name: "AcmeNetworks"
+              children:
+              - fvAEPg:
+                 attributes:
+                    name: "EPG2"
+                 children:
+                 - fvRsPathAtt:
+                    attributes:
+                       encap: "{{ phys_encap }}"
+                       instrImedcy: immediate
+                       tDn: "{{ item }}"
+  with_items:
+      - "{{ phys_path_1 }}"
+      - "{{ phys_path_2 }}"
+  when: state == "present"
+
+
 # Add contracts to EPGs. Normally this would use aci_epg_to_contract module, but currently you cannot add consumed contract
 # interfaces nor can you associate to contracts from a different tenant (like commmon tenant). Therefore we use aci_rest.
 

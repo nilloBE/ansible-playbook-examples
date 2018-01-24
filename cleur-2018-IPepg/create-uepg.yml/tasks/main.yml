@@ -21,6 +21,7 @@
               - fvAEPg:
                  attributes:
                     name: "net-41"
+                    isAttrBasedEPg: "yes"
                  children:
                  - fvRsSecInherited:
                     attributes:
@@ -61,6 +62,7 @@
               - fvAEPg:
                  attributes:
                     name: "net-51"
+                    isAttrBasedEPg: "yes"
                  children:
                  - fvRsSecInherited:
                     attributes:
