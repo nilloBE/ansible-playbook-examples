@@ -13,6 +13,28 @@
      description: "Tenant created or updated at {{ my_date }}"
      state: "{{ state }}"
 
+- name: export ansible contract from common tenant
+  aci_rest:
+     hostname: "{{ inventory_hostname }}"
+     username: "{{ user }}"
+     private_key: /root/admin.key
+     validate_certs: no
+     use_proxy: no
+     method: post
+     path: "api/node/mo/uni/tn-{{ tenant_name}}/cif-{{ ansible_contract }}.json"
+     content: 
+        vzCPIf:
+           attributes:
+              dn: "uni/tn-{{ tenant_name }}/cif-{{ ansible_contract }}"
+              name: "{{ ansible_contract }}"
+              status: "created,modified"
+           children:
+              - vzRsIf:
+                  attributes:
+                     tDn: "uni/tn-common/brc-{{ ansible_contract }}"
+                     status: "created,modified"
+  when: state == "present"
+
 - name: Ensure VRF exists
   aci_vrf: 
      hostname: "{{ inventory_hostname }}"
@@ -45,7 +67,7 @@
      state: "{{ state }}"
   with_items:
      - "{{ infra_bd_name }}"
-     - "{{ web_bd_name }}"
+     - "{{ server_bd_name }}"
      - "{{ db_bd_name }}"
 
 - name: Adding subnet to BD infra
@@ -80,7 +102,7 @@
        - shared
      state: "{{ state }}"
 
-- name: Adding subnet to BD for Web
+- name: Adding subnet to BD for Servers
   aci_bd_subnet:
      hostname: "{{ inventory_hostname }}"
      username: "{{ user }}"
@@ -88,21 +110,21 @@
      validate_certs: no
      description: "Subnet created or updated at {{ my_date }}"
      tenant: "{{ tenant_name }}"
-     bd: "{{ web_bd_name }}"
-     gateway: "{{ web_bd_subnet }}"
+     bd: "{{ server_bd_name }}"
+     gateway: "{{ server_bd_subnet }}"
      mask: 24
      scope:
        - public
        - shared
      state: "{{ state }}"
 
-- name: Associating L3Out to Web BD
+- name: Associating L3Out to Server BD
   aci_bd_to_l3out:
      hostname: "{{ inventory_hostname }}"
      username: "{{ user }}"
      private_key: /root/admin.key
      validate_certs: no
      tenant: "{{ tenant_name }}"
-     bd: "{{ web_bd_name }}"
+     bd: "{{ server_bd_name }}"
      l3out: "{{ l3out_name }}"
      state: "{{ state }}"

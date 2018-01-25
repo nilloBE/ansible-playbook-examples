@@ -156,7 +156,7 @@
 
 
 # Add contracts to EPGs. Normally this would use aci_epg_to_contract module, but currently you cannot add consumed contract
-# interfaces nor can you associate to contracts from a different tenant (like commmon tenant). Therefore we use aci_rest.
+# interfaces. Therefore we use aci_rest.
 
 - name: adding access to the proxy for Web and BD EPGs
   aci_rest:

@@ -1,0 +1,26 @@
+---
+- name: Configure Tenant and Application Profile for Acme
+  hosts: apic-troy-1
+  connection: local
+  gather_facts: no
+
+  vars_files:
+    - ./vars/general_vars.yml
+
+  roles:
+  - { role: "create-opencart-uepg", ap_name: "OpenCartPROD" }
+
+
+#- name: test ansible variables
+#  hosts: haproxy
+#  connection: local
+#  gather_facts: no
+#
+#  vars_files:
+#    - ./vars/general_vars.yml
+#    - ./vars/vcenter-info.yml
+#
+#  tasks:
+#  - name: print variables
+#    debug: 
+#      var: ansible_host

@@ -33,6 +33,7 @@
   with_items:
      - DNS
      - DHCP
+     - Monitoring
 
 - name: Create base EPGs for Acme Web Applications
   aci_epg:
@@ -43,8 +44,8 @@
      tenant: "{{ tenant_name }}"
      description: "EPG created or updated at {{ my_date }}"
      ap: "AcmeNetworks"
-     epg: "WebNetwork"
-     bd: "{{ web_bd_name }}"
+     epg: "ServerNetwork"
+     bd: "{{ server_bd_name }}"
      intra_epg_isolation: enforced
      fwd_control: proxy-arp
      state: "{{ state }}"
@@ -61,11 +62,11 @@
      ap: "AcmeNetworks"
      epg: "DBNetwork"
      bd: "{{ db_bd_name }}"
-     intra_epg_isolation: enforced
-     fwd_control: proxy-arp
+     intra_epg_isolation: unenforced
+#     fwd_control: proxy-arp
      state: "{{ state }}"
 
-- name: Associate Web EPG to VMM Domains
+- name: Associate Server EPG to VMM Domains
   aci_epg_to_domain:
      hostname: "{{ inventory_hostname }}"
      username: "{{ user }}"
@@ -73,7 +74,7 @@
      validate_certs: no
      tenant: "{{ tenant_name }}"
      ap: "AcmeNetworks"
-     epg: "WebNetwork"
+     epg: "ServerNetwork"
      domain: "{{ item }}"
      domain_type: vmm
      vm_provider: vmware
@@ -99,4 +100,140 @@
      resolution_immediacy: immediate
      deploy_immediacy: immediate
      state: "{{ state }}"
+
+# Mapping physical paths for DBs. Currently there is no module to do this.
+
+- name: adding static paths to DB EPG
+  aci_rest:
+     hostname: "{{ inventory_hostname }}"
+     username: "{{ user }}"
+     private_key: /root/admin.key
+     validate_certs: no
+     use_proxy: no
+     method: post
+     path: api/mo/uni.json
+     content:
+        fvTenant:
+           attributes:
+              name: "{{ tenant_name }}"
+           children:
+           - fvAp:
+              attributes:
+                 name: "AcmeNetworks"
+              children:
+              - fvAEPg:
+                 attributes:
+                    name: "DBNetwork"
+                 children:
+                 - fvRsPathAtt:
+                    attributes:
+                       encap: "{{ phys_encap }}"
+                       instrImedcy: immediate
+                       tDn: "{{ item }}"
+  with_items:
+      - "{{ phys_path_pod1 }}"
+      - "{{ phys_path_pod2_1 }}"
+      - "{{ phys_path_pod2_2 }}"
+  when: state == "present"
+
+# Add contracts to EPGs. Normally this would use aci_epg_to_contract module, but currently you cannot add consumed contract
+# # interfaces. Therefore we use aci_rest.
+
+- name: adding access to the proxy for Web and BD EPGs
+  aci_rest:
+     hostname: "{{ inventory_hostname }}"
+     username: "{{ user }}"
+     private_key: /root/admin.key
+     validate_certs: no
+     use_proxy: no
+     method: post
+     path: api/mo/uni.json
+     content:
+        fvTenant:
+           attributes:
+              name: "{{ tenant_name }}"
+           children:
+           - fvAp:
+              attributes: 
+                 name: "AcmeNetworks"
+              children:
+              - fvAEPg:
+                 attributes:
+                    name: "{{ item }}"
+                 children: 
+                 - fvRsConsIf:
+                    attributes:
+                       tnVzCPIfName: "{{ ansible_contract }}"
+                 - fvRsCons:
+                    attributes:
+                       tnVzBrCPName: "{{ proxy_contract }}"
+  with_items:
+    - ServerNetwork
+    - DBNetwork
+  when: state == "present"
+
+## Add tenant contracts to EPGs.
+
+- name: add provided contracts to DNS
+  aci_epg_to_contract:
+     hostname: "{{ inventory_hostname }}"
+     username: "{{ user }}"
+     private_key: /root/admin.key
+     validate_certs: no
+     tenant: "{{ tenant_name }}"
+     ap: "AcmeInfra"
+     epg: "DNS"
+     contract: "DNS"
+     contract_type: "provider"
+     state: "{{ state }}"
+
+- name: add provided contracts to Monitoring
+  aci_epg_to_contract:
+     hostname: "{{ inventory_hostname }}"
+     username: "{{ user }}"
+     private_key: /root/admin.key
+     validate_certs: no
+     tenant: "{{ tenant_name }}"
+     ap: "AcmeInfra"
+     epg: "Monitoring"
+     contract: "{{ item }}"
+     contract_type: "provider"
+     state: "{{ state }}"
+  with_items:
+        - NAGIOS
+        - SYSLOG
+
+- name: add consumed contracts to server EPG
+  aci_epg_to_contract:
+     hostname: "{{ inventory_hostname }}"
+     username: "{{ user }}"
+     private_key: /root/admin.key
+     validate_certs: no
+     tenant: "{{ tenant_name }}"
+     ap: "AcmeNetworks"
+     epg: "ServerNetwork"
+     contract: "{{ item }}"
+     contract_type: "consumer"
+     state: "{{ state }}"
+  with_items:
+        - NAGIOS
+        - SYSLOG
+        - DNS
+
+- name: add consumed contracts to DB EPG
+  aci_epg_to_contract:
+     hostname: "{{ inventory_hostname }}"
+     username: "{{ user }}"
+     private_key: /root/admin.key
+     validate_certs: no
+     tenant: "{{ tenant_name }}"
+     ap: "AcmeNetworks"
+     epg: "DBNetwork"
+     contract: "{{ item }}"
+     contract_type: "consumer"
+     state: "{{ state }}"
+  with_items:
+        - NAGIOS
+        - SYSLOG
+        - DNS
 
