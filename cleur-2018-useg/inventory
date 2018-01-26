@@ -5,15 +5,17 @@ localhost
 apic-troy-1                     # single APIC in system- can also use IP if no DNS or /etc/hosts isn't setup
 
 [haproxy]
-lb-01 ansible_host='10.40.40.100' disk='8' datastore='iSCSI-3' network='VM Network' memory='4096' cpucount='2' osid='centos64Guest'
+frontend-lb-01 ansible_host='10.40.40.101' disk='8' datastore='iSCSI-3' network='VM Network' memory='4096' cpucount='2' osid='centos64Guest'
+frontend-lb-02 ansible_host='10.40.40.102' disk='8' datastore='iSCSI-3' network='VM Network' memory='4096' cpucount='2' osid='centos64Guest'
 
 [web-vm]
-web1 ansible_host='10.40.40.10' disk='8' datastore='iSCSI-3' network='VM Network' memory='4096' cpucount='2' osid='centos64Guest'
-web2 ansible_host='10.40.40.11' disk='8' datastore='iSCSI-3' network='VM Network' memory='4096' cpucount='2' osid='centos64Guest'
+web1 ansible_host='10.40.40.11' disk='8' datastore='iSCSI-3' network='VM Network' memory='4096' cpucount='2' osid='centos64Guest'
+web2 ansible_host='10.40.40.12' disk='8' datastore='iSCSI-3' network='VM Network' memory='4096' cpucount='2' osid='centos64Guest'
+web3 ansible_host='10.40.40.13' disk='8' datastore='iSCSI-3' network='VM Network' memory='4096' cpucount='2' osid='centos64Guest'
 
 [db-vm]
-db1 ansible_host='10.50.50.10' disk='8' datastore='iSCSI-3' network='VM Network' memory='4096' cpucount='2' osid='centos64Guest'
-db2 ansible_host='10.50.50.11' disk='8' datastore='iSCSI-3' network='VM Network' memory='4096' cpucount='2' osid='centos64Guest'
+db1 ansible_host='10.50.50.11' disk='8' datastore='iSCSI-3' network='VM Network' memory='4096' cpucount='2' osid='centos64Guest'
+db2 ansible_host='10.50.50.12' disk='8' datastore='iSCSI-3' network='VM Network' memory='4096' cpucount='2' osid='centos64Guest'
 
 [all:vars]
 user = 'ansible-server'

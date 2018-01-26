@@ -45,4 +45,4 @@
     - ./vars/general_vars.yml
 
   roles:
-  - { role: "create-opencart-uepg", ap_name: "OpenCart-PROD" }
+  - { role: "create-myacmeapp-uepg", ap_name: "MyAcmeApp-PROD" }

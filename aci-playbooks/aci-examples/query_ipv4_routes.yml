@@ -1,0 +1,33 @@
+---
+# This playbook queries the APIC API to search for all known IPv4 prefixes. 
+#
+# NOTE: it can return a **HUGE** output.
+#
+- name: test playbook to obtain and print the list of IP prefixes from the fabric for all nodes, all VRFs 
+  hosts: apic-troy-1
+  connection: local
+  gather_facts: no
+
+  tasks:
+    - name: COLLECT IPv4 List via REST
+      aci_rest:
+         hostname: "{{ inventory_hostname }}"
+         username: "{{ user }}"
+         password: "{{ pass }}"
+         validate_certs: no
+         use_proxy: no
+         method: get
+#         path: "api/node/class/uribv4Dom.json?rsp-subtree=full&rsp-subtree-class=uribv4Route"
+         path: "api/node/class/uribv4Dom.json?rsp-subtree=full&rsp-subtree-class=uribv4Route&rsp-subtree-include=no-scoped&order-by=uribv4Route.dn"
+      register: ipv4_raw
+
+    # Print the list of IP Prefixes
+
+    - name: CREATE A LIST OF JUST IP ADD USING A QUERY FILTER
+      set_fact:
+         ip_prefix_list: "{{ ipv4_raw | json_query('imdata[*].uribv4Route.attributes.prefix') }}"
+
+    - name: Debug the previous task
+      debug:
+         var: ip_prefix_list
+

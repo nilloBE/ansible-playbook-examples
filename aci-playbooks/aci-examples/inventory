@@ -6,5 +6,5 @@ apic-troy-1                     # single APIC in system- can also use IP if no D
 
 
 [all:vars]
-user = 'ansible-server'
+user = 'admin'
 pass = 'cisco12345'

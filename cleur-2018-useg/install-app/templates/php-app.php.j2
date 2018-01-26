@@ -1,0 +1,25 @@
+<?php
+  $servername = "{{ BM_DB_IP }}";
+  $username = "{{ db_user }}";
+  $password = "{{ db_pass }}";
+  $db_name = "{{ db_name }}";
+  $db_port = "3306";
+
+  // create connection to the DB
+  $conn = mysqli_connect($servername, $username, $password, $db_name);
+
+  // check that connection worked
+  if (!$conn) {
+      die("Connection failed: " . mysqli_connect_error());
+  }
+  echo "Connected succesfully to the DB<br>";
+
+  $string = '<br>This is an awesome App!<br>';
+
+  // Print text
+  echo $string;
+
+  // print hostname
+  echo "<br>Running from  ";
+  echo gethostname();
+?>

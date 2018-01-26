@@ -21,7 +21,6 @@
      - MSSQL
      - SYSLOG
      - NAGIOS
-     - HAPROXY-STATS
      - SSH
      - VNC
      - ICMP
@@ -142,6 +141,20 @@
      dst_port_end: "514"
      state: present
 
+- name: verify base ICMP filter entries exists in user tenant
+  aci_filter_entry:
+     hostname: "{{ inventory_hostname }}"
+     username: "{{ user }}"
+     private_key: /root/admin.key
+     validate_certs: no
+     tenant: "{{ tenant_name }}"
+     filter: "ICMP-filter"
+     entry: "icmp"
+     description: "ICMP traffic filter, created at {{ my_date }}"
+     ether_type: ip
+     ip_protocol: "icmp"
+     state: present
+
 - name: create base contracts in user tenant
   aci_contract:
      hostname: "{{ inventory_hostname }}"
@@ -161,7 +174,6 @@
      - MSSQL
      - SYSLOG
      - NAGIOS
-     - HAPROXY-STATS
      - SSH
 
 
@@ -185,7 +197,6 @@
      - MSSQL
      - SYSLOG
      - NAGIOS
-     - HAPROXY-STATS
      - SSH
 
 - name: add base filters to subjects in user tenant
@@ -208,5 +219,26 @@
      - MSSQL
      - SYSLOG
      - NAGIOS
-     - HAPROXY-STATS
+     - SSH
+
+- name: add ICMP base filters to subjects in user tenant
+  aci_contract_subject_to_filter:
+     hostname: "{{ inventory_hostname }}"
+     username: "{{ user }}"
+     private_key: /root/admin.key
+     validate_certs: no
+     contract: "{{ item }}"
+     tenant: "{{ tenant_name }}"
+     subject: "{{ item }}-subject"
+     filter: "ICMP-filter"
+     log: "log"
+     state: "{{ state }}"
+  with_items:
+     - DNS
+     - HTTP
+     - HTTPS
+     - MYSQL
+     - MSSQL
+     - SYSLOG
+     - NAGIOS
      - SSH

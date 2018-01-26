@@ -1,0 +1,25 @@
+# This playbook will intall a PHP application on virtual machines running CentOS7 and then install an HAProxy LB
+- name: install web application
+  hosts: web-vm
+  gather_facts: yes
+  become: true
+
+  vars_files:
+    - ./vars/general_vars.yml
+    - ./vars/vcenter-info.yml
+
+  roles:
+  - { role: "install-app" }
+
+- name: install load balancer
+  hosts: haproxy
+  gather_facts: yes
+  become: true
+
+  vars_files:
+    - ./vars/general_vars.yml
+    - ./vars/vcenter-info.yml
+
+  roles:
+  - { role: "haproxy" }
+

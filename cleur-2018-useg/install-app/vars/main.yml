@@ -1,0 +1,7 @@
+---
+# vars file for install-app
+apache_port: "80"
+BM_DB_IP: "10.50.50.200"
+db_user: "app-user"
+db_pass: "cisco"
+db_name: "test"

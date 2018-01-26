@@ -30,7 +30,8 @@
       aci_rest:
          hostname: "{{ inventory_hostname }}"
          username: "{{ user }}"
-         private_key: /root/admin.key
+         password: "{{ pass }}"
+#         private_key: /root/admin.key
          validate_certs: no  
          method: post
          use_proxy: no

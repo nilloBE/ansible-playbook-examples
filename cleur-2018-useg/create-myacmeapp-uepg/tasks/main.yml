@@ -3,7 +3,7 @@
 - name: Get current time
   set_fact: my_date="{{lookup('pipe','date +%Y%m%d%H%M%S')}}"
 
-- name: create ACI Application Profile for OpenCart
+- name: create ACI Application Profile for MyAcmeApp
   aci_ap:
      hostname: "{{ inventory_hostname }}"
      username: "{{ user }}"
@@ -64,7 +64,7 @@
                           name: "0"
                           type: "vm-name"
                           value: "{{ LB_NAME }}"
-                          operator: "equals"
+                          operator: "contains"
   when: state == "present"
 
 - name: create Web uEPG
@@ -216,3 +216,73 @@
                           usefvSubnet: "no"
                           ip: "{{ BM_DB_IP }}"
   when: state == "present"
+
+- name: add provided contracts to DB-PROD
+  aci_epg_to_contract:
+     hostname: "{{ inventory_hostname }}"
+     username: "{{ user }}"
+     private_key: /root/admin.key
+     validate_certs: no
+     tenant: "{{ tenant_name }}"
+     ap: "{{ ap_name }}"
+     epg: "DB-PROD"
+     contract: "MYSQL"
+     contract_type: "provider"
+     state: "{{ state }}"
+
+- name: add consumed contracts to WEB-PROD
+  aci_epg_to_contract:
+     hostname: "{{ inventory_hostname }}"
+     username: "{{ user }}"
+     private_key: /root/admin.key
+     validate_certs: no
+     tenant: "{{ tenant_name }}"
+     ap: "{{ ap_name }}"
+     epg: "WEB-PROD"
+     contract: "MYSQL"
+     contract_type: "consumer"
+     state: "{{ state }}"
+
+- name: add provided contracts to WEB-PROD
+  aci_epg_to_contract:
+     hostname: "{{ inventory_hostname }}"
+     username: "{{ user }}"
+     private_key: /root/admin.key
+     validate_certs: no
+     tenant: "{{ tenant_name }}"
+     ap: "{{ ap_name }}"
+     epg: "WEB-PROD"
+     contract: "HTTP"
+     contract_type: "provider"
+     state: "{{ state }}"
+
+- name: add consumed contracts to FrontEnd-PROD
+  aci_epg_to_contract:
+     hostname: "{{ inventory_hostname }}"
+     username: "{{ user }}"
+     private_key: /root/admin.key
+     validate_certs: no
+     tenant: "{{ tenant_name }}"
+     ap: "{{ ap_name }}"
+     epg: "FrontEnd-PROD"
+     contract: "HTTP"
+     contract_type: "consumer"
+     state: "{{ state }}"
+
+- name: add provided contracts to FrontEnd-PROD
+  aci_epg_to_contract:
+     hostname: "{{ inventory_hostname }}"
+     username: "{{ user }}"
+     private_key: /root/admin.key
+     validate_certs: no
+     tenant: "{{ tenant_name }}"
+     ap: "{{ ap_name }}"
+     epg: "FrontEnd-PROD"
+     contract: "{{ item }}"
+     contract_type: "provider"
+     state: "{{ state }}"
+  with_items:
+    - "{{ opencart_contract }}"
+    - "HAPROXY-STATS"
+
+
