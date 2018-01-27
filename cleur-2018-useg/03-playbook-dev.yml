@@ -1,0 +1,75 @@
+---
+# This playbook launches a VM on a second vCenter and DC, and configures a uEPG for it.
+# It then installs the demo PHP app and customizes it for a new version.
+# Finally, we update the HAProxy LB Configuration.
+#
+- name: Launch the dev web VMs
+  hosts: web-vm
+  gather_facts: no
+  connection: local
+
+  vars_files:
+    - ./vars/general_vars.yml
+    - ./vars/vcenter-info2.yml
+
+  roles:
+  - { role: "clone-vm-vmware", ip_address: "{{ ansible_host }}", ip_gateway: "{{ server_bd_subnet }}", dvportgroup_name: "{{ tenant_name}}|AcmeNetworks|ServerNetwork" }
+
+- name: Configure Dev uEPG
+  hosts: apic-troy-1
+  connection: local
+  gather_facts: no
+
+  vars_files:
+    - ./vars/general_vars.yml
+
+  roles:
+  - { role: "create-myacmeapp-dev-uepg", ap_name: "MyAcmeApp-DEV" }
+
+- name: install web application
+  hosts: web-vm
+  gather_facts: yes
+  become: true
+
+  vars_files:
+    - ./vars/general_vars.yml
+    - ./vars/vcenter-info2.yml
+
+  roles:
+  - { role: "install-app" }
+
+  tasks: 
+  - name: copy new version of the application
+    copy:
+       src: ./files/myapp-new.php
+       dst: /var/www/html/app-new.php
+       owner: root
+       group: root
+       mode: 0644 
+
+  - name: copy new version of the application gif
+    copy:
+       src: ./files/giphy.gif
+       dst: /var/www/html/giphy.gif
+       owner: root
+       group: root
+       mode: 0644
+
+- name: update LB configuration and restart it
+  hosts: haproxy
+  gather_facts: yes
+  become: true
+  
+  vars_files:
+    - ./vars/general_vars.yml
+    - ./vars/vcenter-info.yml
+
+  tasks:
+  - name: update LB configuration
+    shell: "echo '    server web4 10.40.40.14:80 check' >> /etc/haproxy/haproxy.cfg"
+
+  - name: restart HAProxy
+    systemd:
+       name: haproxy
+       state: restarted
+

@@ -11,10 +11,15 @@
   roles:
   - { role: "install-app" }
 
-- name: install load balancer
+- name: install load balancer with keepalive
   hosts: haproxy
   gather_facts: yes
   become: true
+
+  vars:
+    k_master_ip: "10.40.40.101"
+    k_slave_ip: "10.40.40.102"
+    k_vip: "10.40.40.110"
 
   vars_files:
     - ./vars/general_vars.yml
@@ -22,4 +27,5 @@
 
   roles:
   - { role: "haproxy" }
+  - { role: "haproxy-keepalived", master_ip: "{{ k_master_ip }}", slave_ip: "{{ k_slave_ip }}", virtual_ip: "{{ k_vip }}", is_master: "{{ master }}" }
 

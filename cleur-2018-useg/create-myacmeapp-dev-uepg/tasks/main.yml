@@ -1,0 +1,90 @@
+---
+# tasks file for create-myacmeapp-dev-uepg
+- name: Get current time
+  set_fact: my_date="{{lookup('pipe','date +%Y%m%d%H%M%S')}}"
+
+- name: create ACI Application Profile for MyAcmeApp
+  aci_ap:
+     hostname: "{{ inventory_hostname }}"
+     username: "{{ user }}"
+     private_key: /root/admin.key
+     validate_certs: no
+     tenant: "{{ tenant_name }}"
+     description: "AP created or updated at {{ my_date }}"
+     ap: "{{ ap_name }}"
+     state: "{{ state }}"
+
+- name: create Web uEPG
+  aci_rest:
+     hostname: "{{ inventory_hostname }}"
+     username: "{{ user }}"
+     private_key: /root/admin.key
+     validate_certs: no
+     use_proxy: no
+     method: post
+     path: "api/node/mo/uni/tn-{{ tenant_name }}.json"
+     content:
+        fvTenant:
+           attributes:
+              name: "{{ tenant_name }}"
+           children:
+           - fvAp:
+              attributes:
+                 name: "{{ ap_name }}"
+              children:
+              - fvAEPg:
+                 attributes:
+                    name: "WEB-DEV"
+                    isAttrBasedEPg: "yes"
+                 children:
+                 - fvRsSecInherited:
+                    attributes:
+                       tDn: "uni/tn-{{ tenant_name }}/ap-AcmeNetworks/epg-ServerNetwork"
+                 - fvRsBd:
+                    attributes:
+                       tnFvBDName: "{{ server_bd_name }}"
+                 - fvRsDomAtt:
+                    attributes:
+                       tDn: "{{ vmm_domain_dn_dc1 }}"
+                       instrImedcy: immediate
+                       resImedcy: immediate
+                 - fvRsDomAtt:
+                    attributes:
+                       tDn: "{{ vmm_domain_dn_dc2 }}"
+                       instrImedcy: immediate
+                       resImedcy: immediate
+                 - fvCrtrn:
+                    attributes:
+                       prec: "5"
+                       match: "all"
+                    children:
+                    - fvVmAttr:
+                        attributes:
+                           name: "0"
+                           labelName: "{{ app_id_custom }}"
+                           operator: "equals"
+                           type: "custom-label"
+                           value: "{{ app_value_custom }}"
+                    - fvVmAttr:
+                        attributes:
+                           name: "1"
+                           labelName: "{{ tier_id_custom }}"
+                           operator: "equals"
+                           type: "custom-label"
+                           value: "{{ tier_value_custom }}"
+                    - fvVmAttr:
+                        attributes:
+                           name: "2"
+                           labelName: "{{ env_id_custom }}"
+                           operator: "equals"
+                           type: "custom-label"
+                           value: "dev"
+                    - fvVmAttr:
+                        attributes:
+                           name: "3"
+                           type: "domain"
+                           operator: "equals"
+                           value: "{{ vmm_domain_name_dc2 }}"
+  when: state == "present"
+
+

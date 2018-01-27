@@ -40,6 +40,9 @@
                  - fvRsSecInherited:
                     attributes:
                        tDn: "uni/tn-{{ tenant_name }}/ap-AcmeNetworks/epg-ServerNetwork"
+                 - fvRsIntraEpg:
+                    attributes:
+                       tnVzBrCPName: "KEEPALIVED-VRRP"
                  - fvRsBd:
                     attributes:
                        tnFvBDName: "{{ server_bd_name }}"

@@ -24,6 +24,7 @@
      - SSH
      - VNC
      - ICMP
+     - KEEPALIVED-VRRP-filter
 
 - name: verify base DNS filter entries exists in user tenant
   aci_filter_entry:
@@ -155,6 +156,20 @@
      ip_protocol: "icmp"
      state: present
 
+- name: verify base KEEPALIVED-VRRP filter entries exists in user tenant
+  aci_filter_entry:
+     hostname: "{{ inventory_hostname }}"
+     username: "{{ user }}"
+     private_key: /root/admin.key
+     validate_certs: no
+     tenant: "{{ tenant_name }}"
+     filter: "KEEPALIVED-VRRP-filter"
+     entry: "ip-112"
+     description: "VRRP traffic filter, created at {{ my_date }}"
+     ether_type: ip
+     ip_protocol: "112"
+     state: present
+
 - name: create base contracts in user tenant
   aci_contract:
      hostname: "{{ inventory_hostname }}"
@@ -175,7 +190,7 @@
      - SYSLOG
      - NAGIOS
      - SSH
-
+     - KEEPALIVED-VRRP
 
 - name: create subjects for each base contracts in user tenant
   aci_contract_subject:
@@ -198,6 +213,7 @@
      - SYSLOG
      - NAGIOS
      - SSH
+     - KEEPALIVED-VRRP
 
 - name: add base filters to subjects in user tenant
   aci_contract_subject_to_filter:
@@ -220,6 +236,7 @@
      - SYSLOG
      - NAGIOS
      - SSH
+     - KEEPALIVED-VRRP
 
 - name: add ICMP base filters to subjects in user tenant
   aci_contract_subject_to_filter:
@@ -242,3 +259,4 @@
      - SYSLOG
      - NAGIOS
      - SSH
+     - KEEPALIVED-VRRP
