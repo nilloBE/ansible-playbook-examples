@@ -156,19 +156,44 @@
      ip_protocol: "icmp"
      state: present
 
-- name: verify base KEEPALIVED-VRRP filter entries exists in user tenant
-  aci_filter_entry:
+#- name: verify base KEEPALIVED-VRRP filter entries exists in user tenant
+#  aci_filter_entry:
+#     hostname: "{{ inventory_hostname }}"
+#     username: "{{ user }}"
+#     private_key: /root/admin.key
+#     validate_certs: no
+#     tenant: "{{ tenant_name }}"
+#     filter: "KEEPALIVED-VRRP-filter"
+#     entry: "ip-112"
+#     description: "VRRP traffic filter, created at {{ my_date }}"
+#     ether_type: ip
+#     ip_protocol: "112"
+#     state: present
+# Currently there is a bug and aci_filter_entry does not accept integers as IP protocol. Using aci_rest instead.
+
+- name: verify base KEEPALIVED-VRRP filter entries exists in user tenant using aci_rest
+  aci_rest:
      hostname: "{{ inventory_hostname }}"
      username: "{{ user }}"
      private_key: /root/admin.key
      validate_certs: no
-     tenant: "{{ tenant_name }}"
-     filter: "KEEPALIVED-VRRP-filter"
-     entry: "ip-112"
-     description: "VRRP traffic filter, created at {{ my_date }}"
-     ether_type: ip
-     ip_protocol: "112"
-     state: present
+     use_proxy: no
+     method: post
+     path: "api/node/mo/uni/tn-{{ tenant_name}}.json"
+     content:
+        fvTenant:
+           attributes:
+              name: "{{ tenant_name }}"
+           children:
+           - vzFilter:
+              attributes:
+                 name: "KEEPALIVED-VRRP-filter-filter"
+              children:
+              - vzEntry:
+                 attributes:
+                    name: "ip-112"
+                    etherT: "ip"
+                    prot: "112"
 
 - name: create base contracts in user tenant
   aci_contract:
