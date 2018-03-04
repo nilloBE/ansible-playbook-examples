@@ -1,0 +1,73 @@
+---
+- name: check that VM exists in oVirt
+  hosts: web
+  connection: local
+  gather_facts: no
+
+  vars_files: 
+    - ./vars/general_vars.yml
+  
+  tasks:
+    - block:
+       - include_vars: ./vars/ovirt_data.yml
+
+       - name: obtain SSO token with username and password credentials
+         ovirt_auth:
+            url: "{{ rhvm_url }}"
+            username: admin@internal
+            ca_file: ca.pem
+            password: "{{ ovirt_password }}"
+
+#       - name: create disk for the VM
+#         ovirt_disk:
+#            auth: "{{ ovirt_auth }}"
+#            name: "{{ inventory_hostname }}-Disk"
+#            size: 8GiB
+#            format: raw
+#            storage_domain: "NFS-DC2"
+#            state: present
+#         register: VMDisk
+
+       - name: create the VM from a template
+         ovirt_vms:
+            auth: "{{ ovirt_auth }}"
+            state: present
+            name: "{{ inventory_hostname }}"
+            cluster: CLUSTER-01
+            memory: 1024MiB
+            memory_guaranteed: 512MiB
+            operating_system: other_linux
+            storage_domain: "NFS-DC2"
+            clone: True
+            template: "{{ template_name }}"
+#            disks:
+#              - name: centos-server_Disk2
+#                id: "{{ VMDisk.id }}"
+#                bootable: true
+#                interface: virtio
+#            nics:
+#              - name: nic1
+#                interface: virtio
+#                profile_name: "{{ tenant_name }}|{{ ap_name }}|{{ epg_name }}"
+#            type: server
+
+       - name: change VM NIC to new profile
+         ovirt_nics:
+            auth: "{{ ovirt_auth }}"
+            vm: "{{ inventory_hostname }}"
+            name: nic1
+            profile: "{{ tenant_name }}|{{ ap_name }}|{{ epg_name }}"
+            network: "{{ tenant_name }}|{{ ap_name }}|{{ epg_name }}"
+
+       - name: boot up the VM
+         ovirt_vms:
+            auth: "{{ ovirt_auth }}"
+            state: running
+            name: "{{ inventory_hostname }}"
+            type: server
+
+      always:
+       - name: revoke SSO token
+         ovirt_auth:
+            state: absent
+            ovirt_auth: "{{ ovirt_auth }}"

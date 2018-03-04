@@ -1,0 +1,4 @@
+template_name: centos7-3
+tenant_name: AcmeTenant
+ap_name: AcmeOpenApps
+epg_name: web-servers
