@@ -1,0 +1,17 @@
+[local]
+localhost
+
+[APIC]
+apic-troy-1                     # single APIC in system- can also use IP if no DNS or /etc/hosts isn't setup
+
+[frontend]
+frontend-01 disk='8' datastore='iSCSI-3' network='VM Network' memory='4096' cpucount='2' osid='centos64Guest'
+frontend-02 disk='8' datastore='iSCSI-3' network='VM Network' memory='4096' cpucount='2' osid='centos64Guest'
+
+[web]
+web-01 disk='8' datastore='iSCSI-3' network='VM Network' memory='4096' cpucount='2' osid='centos64Guest'
+web-02 disk='8' datastore='iSCSI-3' network='VM Network' memory='4096' cpucount='2' osid='centos64Guest'
+web-03 disk='8' datastore='iSCSI-3' network='VM Network' memory='4096' cpucount='2' osid='centos64Guest'
+
+[all:vars]
+user = 'ansible-server'

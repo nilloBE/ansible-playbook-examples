@@ -1,0 +1,66 @@
+---
+# tasks file for haproxy-keepalived
+- name: copy the resolv.conf file
+  copy:
+    src: ./files/resolv.conf
+    dest: /etc/resolv.conf
+    owner: root
+    group: root
+    mode: 0644
+
+- name: install keepalived package
+  yum:
+    name: keepalived
+    state: present
+
+- name: allow VRRP protocol
+  shell: "iptables -I INPUT -p vrrp -j ACCEPT"
+
+- name: starting keepalived
+  systemd:
+     name: keepalived
+     state: started
+     enabled: yes
+     masked: no
+
+- name: move default config file
+  copy:
+     src: /etc/keepalived/keepalived.conf
+     dest: /etc/keepalived/keepalived.conf.org
+     remote_src: yes
+
+- name: copy the basic config file for a master
+  template:
+     src: ./templates/keepalived-master.conf.j2
+     dest: /etc/keepalived/keepalived.conf
+     owner: root
+     group: root
+     mode: 0644
+  when: is_master == "yes"
+
+- name: copy the basic config file for a slave
+  template:
+     src: ./templates/keepalived-slave.conf.j2
+     dest: /etc/keepalived/keepalived.conf
+     owner: root
+     group: root
+     mode: 0644
+  when: is_master == "no"
+
+- name: copy the master script file
+  copy:
+    src: ./files/keepalived-master.sh
+    dest: /etc/keepalived/master.sh
+    owner: root
+    group: root
+    mode: 0777
+
+- name: restart services
+  systemd:
+     name: "{{ item }}"
+     state: restarted
+     daemon_reload: yes
+  with_items:
+     - keepalived
+     - haproxy
+ 

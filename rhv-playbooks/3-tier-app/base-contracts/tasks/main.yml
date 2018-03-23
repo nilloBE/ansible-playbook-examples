@@ -1,0 +1,289 @@
+---
+# tasks file for base-contracts
+- name: Get current time
+  set_fact: my_date="{{lookup('pipe','date +%Y%m%d%H%M%S')}}"
+
+- name: verify base filters exists in user tenant
+  aci_filter:
+     hostname: "{{ inventory_hostname }}"
+     username: "{{ user }}"
+     private_key: /root/admin.key
+     validate_certs: no
+     tenant: "{{ tenant_name }}"
+     filter: "{{ item }}-filter"
+     description: "{{ item }} traffic, created at {{ my_date }}"
+     state: present
+  with_items:
+     - DNS
+     - HTTP
+     - HTTP-APP
+     - HTTPS
+     - MYSQL
+     - MSSQL
+     - SYSLOG
+     - NAGIOS
+     - SSH
+     - VNC
+     - ICMP
+     - KEEPALIVED-VRRP-filter
+
+- name: verify base DNS filter entries exists in user tenant
+  aci_filter_entry:
+     hostname: "{{ inventory_hostname }}"
+     username: "{{ user }}"
+     private_key: /root/admin.key
+     validate_certs: no
+     tenant: "{{ tenant_name }}"
+     filter: "DNS-filter"
+     entry: "{{ item }}-53"
+     description: "DNS traffic, created at {{ my_date }}"
+     ether_type: ip
+     ip_protocol: "{{ item }}"
+     dst_port_start: 53
+     dst_port_end: 53
+     state: present
+  with_items:
+     - udp
+     - tcp
+
+- name: verify base HTTP filter entries exists in user tenant
+  aci_filter_entry:
+     hostname: "{{ inventory_hostname }}"
+     username: "{{ user }}"
+     private_key: /root/admin.key
+     validate_certs: no
+     tenant: "{{ tenant_name }}"
+     filter: "HTTP-filter"
+     entry: "tcp-80"
+     description: "HTTP traffic, created at {{ my_date }}"
+     ether_type: "ip"
+     ip_protocol: "tcp"
+     dst_port_start: 80
+     dst_port_end: 80
+     state: present
+
+- name: verify base HTTP-APP filter entries exists in user tenant
+  aci_filter_entry:
+     hostname: "{{ inventory_hostname }}"
+     username: "{{ user }}"
+     private_key: /root/admin.key
+     validate_certs: no
+     tenant: "{{ tenant_name }}"
+     filter: "HTTP-APP-filter"
+     entry: "tcp-80"
+     description: "HTTP traffic, created at {{ my_date }}"
+     ether_type: "ip"
+     ip_protocol: "tcp"
+     dst_port_start: 80
+     dst_port_end: 80
+     state: present
+
+- name: verify base HTTPS filter entries exists in user tenant
+  aci_filter_entry:
+     hostname: "{{ inventory_hostname }}"
+     username: "{{ user }}"
+     private_key: /root/admin.key
+     validate_certs: no
+     tenant: "{{ tenant_name }}"
+     filter: "HTTPS-filter"
+     entry: "tcp-443"
+     description: "HTTPS traffic, created at {{ my_date }}"
+     ether_type: "ip"
+     ip_protocol: "tcp"
+     dst_port_start: "443"
+     dst_port_end: "443"
+     state: present
+
+- name: verify base MYSQL filter entries exists in user tenant
+  aci_filter_entry:
+     hostname: "{{ inventory_hostname }}"
+     username: "{{ user }}"
+     private_key: /root/admin.key
+     validate_certs: no
+     tenant: "{{ tenant_name }}"
+     filter: "MYSQL-filter"
+     entry: "tcp-3306"
+     description: "MYSQL traffic, created at {{ my_date }}"
+     ether_type: "ip"
+     ip_protocol: "tcp"
+     dst_port_start: "3306"
+     dst_port_end: "3306"
+     state: present
+
+- name: verify base MSSQL filter entries exists in user tenant
+  aci_filter_entry:
+     hostname: "{{ inventory_hostname }}"
+     username: "{{ user }}"
+     private_key: /root/admin.key
+     validate_certs: no
+     tenant: "{{ tenant_name }}"
+     filter: "MSSQL-filter"
+     entry: "tcp-1433"
+     description: "MSSQL traffic, created at {{ my_date }}"
+     ether_type: "ip"
+     ip_protocol: "tcp"
+     dst_port_start: "1433"
+     dst_port_end: "1433"
+     state: present
+
+- name: verify base SSH filter entries exists in user tenant
+  aci_filter_entry:
+     hostname: "{{ inventory_hostname }}"
+     username: "{{ user }}"
+     private_key: /root/admin.key
+     validate_certs: no
+     tenant: "{{ tenant_name }}"
+     filter: "SSH-filter"
+     entry: "tcp-22"
+     description: "SSH traffic, created at {{ my_date }}"
+     ether_type: "ip"
+     ip_protocol: "tcp"
+     dst_port_start: "22"
+     dst_port_end: "22"
+     state: present
+
+
+- name: verify base SYSLOG filter entries exists in user tenant
+  aci_filter_entry:
+     hostname: "{{ inventory_hostname }}"
+     username: "{{ user }}"
+     private_key: /root/admin.key
+     validate_certs: no
+     tenant: "{{ tenant_name }}"
+     filter: "SYSLOG-filter"
+     entry: "udp-514"
+     description: "SYSLOG traffic, created at {{ my_date }}"
+     ether_type: "ip"
+     ip_protocol: "udp"
+     dst_port_start: "514"
+     dst_port_end: "514"
+     state: present
+
+- name: verify base ICMP filter entries exists in user tenant
+  aci_filter_entry:
+     hostname: "{{ inventory_hostname }}"
+     username: "{{ user }}"
+     private_key: /root/admin.key
+     validate_certs: no
+     tenant: "{{ tenant_name }}"
+     filter: "ICMP-filter"
+     entry: "icmp"
+     description: "ICMP traffic filter, created at {{ my_date }}"
+     ether_type: ip
+     ip_protocol: "icmp"
+     state: present
+
+- name: verify base KEEPALIVED-VRRP filter entries exists in user tenant using aci_rest
+  aci_rest:
+     hostname: "{{ inventory_hostname }}"
+     username: "{{ user }}"
+     private_key: /root/admin.key
+     validate_certs: no
+     use_proxy: no
+     method: post
+     path: "api/node/mo/uni/tn-{{ tenant_name}}.json"
+     content:
+        fvTenant:
+           attributes:
+              name: "{{ tenant_name }}"
+           children:
+           - vzFilter:
+              attributes:
+                 name: "KEEPALIVED-VRRP-filter-filter"
+              children:
+              - vzEntry:
+                 attributes:
+                    name: "ip-112"
+                    etherT: "ip"
+                    prot: "112"
+
+- name: create base contracts in user tenant
+  aci_contract:
+     hostname: "{{ inventory_hostname }}"
+     username: "{{ user }}"
+     private_key: /root/admin.key
+     validate_certs: no
+     description: "{{ item }} contract, created at {{ my_date }}"
+     tenant: "{{ tenant_name }}"
+     contract: "{{ item }}"
+     scope: "tenant"
+     state: "{{ state }}"
+  with_items: 
+     - DNS
+     - HTTP-APP
+     - HTTPS
+     - MYSQL
+     - MSSQL
+     - SYSLOG
+     - NAGIOS
+     - SSH
+     - KEEPALIVED-VRRP
+
+- name: create subjects for each base contracts in user tenant
+  aci_contract_subject:
+     hostname: "{{ inventory_hostname }}"
+     username: "{{ user }}"
+     private_key: /root/admin.key
+     validate_certs: no
+     contract: "{{ item }}"
+     description: "{{ item }} traffic subject, created at {{ my_date }}"
+     tenant: "{{ tenant_name }}"
+     reverse_filter: True
+     subject: "{{ item }}-subject"
+     state: "{{ state }}"
+  with_items:
+     - DNS
+     - HTTP-APP
+     - HTTPS
+     - MYSQL
+     - MSSQL
+     - SYSLOG
+     - NAGIOS
+     - SSH
+     - KEEPALIVED-VRRP
+
+- name: add base filters to subjects in user tenant
+  aci_contract_subject_to_filter:
+     hostname: "{{ inventory_hostname }}"
+     username: "{{ user }}"
+     private_key: /root/admin.key
+     validate_certs: no
+     contract: "{{ item }}"
+     tenant: "{{ tenant_name }}"
+     subject: "{{ item }}-subject"
+     filter: "{{ item }}-filter"
+     log: "log"
+     state: "{{ state }}"
+  with_items:
+     - DNS
+     - HTTP-APP
+     - HTTPS
+     - MYSQL
+     - MSSQL
+     - SYSLOG
+     - NAGIOS
+     - SSH
+     - KEEPALIVED-VRRP
+
+- name: add ICMP base filters to subjects in user tenant
+  aci_contract_subject_to_filter:
+     hostname: "{{ inventory_hostname }}"
+     username: "{{ user }}"
+     private_key: /root/admin.key
+     validate_certs: no
+     contract: "{{ item }}"
+     tenant: "{{ tenant_name }}"
+     subject: "{{ item }}-subject"
+     filter: "ICMP-filter"
+     log: "log"
+     state: "{{ state }}"
+  with_items:
+     - DNS
+     - HTTP-APP
+     - HTTPS
+     - MYSQL
+     - MSSQL
+     - SYSLOG
+     - NAGIOS
+     - SSH
+     - KEEPALIVED-VRRP

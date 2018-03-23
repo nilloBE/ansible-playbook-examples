@@ -1,0 +1,43 @@
+---
+# tasks to clone a VM on RHV
+- block:
+  - name: obtain SSO token with username and password credentials
+    ovirt_auth:
+       url: "{{ rhvm_url }}"
+       username: admin@internal
+       ca_file: ca.pem
+       password: "{{ ovirt_password }}"
+
+  - name: clone the VM from template 
+    ovirt_vms:
+       auth: "{{ ovirt_auth }}"
+       state: present
+       name: "{{ inventory_hostname }}"
+       cluster: "{{ cluster_name }}"
+       memory: "{{ vm_memory | default('1024MiB') }}"
+       memory_guaranteed: "{{ vm_memory_g | default('512MiB') }}"
+       operating_system: "{{ guest_os | default('other_linux') }}"
+       storage_domain: "{{ storage_domain }}"
+       clone: True
+       template: "{{ template }}"
+
+  - name: change VM NIC to new profile
+    ovirt_nics:
+       auth: "{{ ovirt_auth }}"
+       vm: "{{ inventory_hostname }}"
+       name: nic1
+       profile: "{{ tenant }}|{{ ap }}|{{ epg }}"
+       network: "{{ tenant }}|{{ ap }}|{{ epg }}"
+
+  - name: boot up the VM
+    ovirt_vms:
+       auth: "{{ ovirt_auth }}"
+       state: running
+       name: "{{ inventory_hostname }}"
+       type: server
+
+  always:
+  - name: revoke SSO token
+    ovirt_auth:
+     state: absent
+     ovirt_auth: "{{ ovirt_auth }}"

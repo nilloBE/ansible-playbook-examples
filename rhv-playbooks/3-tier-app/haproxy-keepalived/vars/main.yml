@@ -1,0 +1,7 @@
+---
+# vars file for haproxy-keepalived
+is_master: yes
+master_ip: "1.1.1.1"
+slave_ip: "2.2.2.2"
+virtual_ip: "1.1.1.10"
+if_name: "ens160"

@@ -1,0 +1,155 @@
+---
+# A list of tasks to run against an APIC cluster in order to create a three-tier app 
+# running on RHV. These tasks create a frontend EPG and a webservers EPG, associate required contracts
+# and consume contracts to reach an existing DB.
+#
+# Expects variables coming from the main.yml playbook.
+#
+    - name: create frontend EPG
+      aci_epg:
+         hostname: "{{ inventory_hostname }}"
+         username: "{{ user }}"
+         private_key: /root/admin.key
+         validate_certs: no
+         tenant: "{{ tenant_name }}"
+         ap: "{{ ap_name }}"
+         epg: "{{ frontend_epg_name }}"
+         bd: "{{ bd_name }}"
+         state: present
+
+    - name: create web EPG
+      aci_epg:
+         hostname: "{{ inventory_hostname }}"
+         username: "{{ user }}"
+         private_key: /root/admin.key
+         validate_certs: no
+         tenant: "{{ tenant_name }}"
+         ap: "{{ ap_name }}"
+         epg: "{{ web_epg_name }}"
+         bd: "{{ bd_name }}"
+         state: present
+    
+    - name: adding access to the proxy and from ansible for the EPGs
+      aci_rest:
+         hostname: "{{ inventory_hostname }}"
+         username: "{{ user }}"
+         private_key: /root/admin.key
+         validate_certs: no
+         use_proxy: no
+         method: post
+         path: api/mo/uni.json
+         content:
+            fvTenant:
+               attributes:
+                  name: "{{ tenant_name }}"
+               children:
+               - fvAp:
+                  attributes: 
+                     name: "{{ ap_name }}"
+                  children:
+                  - fvAEPg:
+                      attributes:
+                         name: "{{ item }}"
+                      children: 
+                      - fvRsConsIf:
+                          attributes:
+                             tnVzCPIfName: "{{ ansible_contract }}"
+                      - fvRsCons:
+                          attributes:
+                             tnVzBrCPName: "{{ proxy_contract }}"
+      with_items:
+        - "{{ frontend_epg_name }}"
+        - "{{ web_epg_name }}"
+
+    - name: associate provided contracts to frontend
+      aci_epg_to_contract:
+         hostname: "{{ inventory_hostname }}"
+         username: "{{ user }}"
+         private_key: /root/admin.key
+         validate_certs: no
+         tenant: "{{ tenant_name }}"
+         ap: "{{ ap_name }}"
+         epg: "{{ frontend_epg_name }}"
+         contract: "{{ item }}"
+         contract_type: provider
+         state: present
+      with_items:
+         - HAPROXY-STATS
+         - "{{ app_contract_name }}"
+
+    - name: associate consumed contracts to frontend
+      aci_epg_to_contract:
+         hostname: "{{ inventory_hostname }}"
+         username: "{{ user }}"
+         private_key: /root/admin.key
+         validate_certs: no
+         tenant: "{{ tenant_name }}"
+         ap: "{{ ap_name }}"
+         epg: "{{ frontend_epg_name }}"
+         contract: "{{ item }}"
+         contract_type: consumer
+         state: present
+      with_items:
+         - HTTP-APP
+
+    - name: associate provided contracts to web
+      aci_epg_to_contract:
+         hostname: "{{ inventory_hostname }}"
+         username: "{{ user }}"
+         private_key: /root/admin.key
+         validate_certs: no
+         tenant: "{{ tenant_name }}"
+         ap: "{{ ap_name }}"
+         epg: "{{ web_epg_name }}"
+         contract: "{{ item }}"
+         contract_type: provider
+         state: present
+      with_items:
+         - HTTP-APP
+
+    - name: associate consumed contracts to web
+      aci_epg_to_contract:
+         hostname: "{{ inventory_hostname }}"
+         username: "{{ user }}"
+         private_key: /root/admin.key
+         validate_certs: no
+         tenant: "{{ tenant_name }}"
+         ap: "{{ ap_name }}"
+         epg: "{{ web_epg_name }}"
+         contract: "{{ item }}"
+         contract_type: consumer
+         state: present
+      with_items:
+         - MYSQL
+
+    - name: associate the frontend EPG to the RHV Domain
+      aci_epg_to_domain:
+         hostname: "{{ inventory_hostname }}"
+         username: "{{ user }}"
+         private_key: /root/admin.key
+         validate_certs: no
+         tenant: "{{ tenant_name }}"
+         ap: "{{ ap_name }}"
+         epg: "{{ frontend_epg_name }}"
+         domain: "{{ vmm_name }}"
+         domain_type: vmm
+         vm_provider: redhat
+         resolution_immediacy: pre-provision
+         deploy_immediacy: immediate
+         state: present
+
+    - name: associate the web EPG to the RHV Domain
+      aci_epg_to_domain:
+         hostname: "{{ inventory_hostname }}"
+         username: "{{ user }}"
+         private_key: /root/admin.key
+         validate_certs: no
+         tenant: "{{ tenant_name }}"
+         ap: "{{ ap_name }}"
+         epg: "{{ web_epg_name }}"
+         domain: "{{ vmm_name }}"
+         domain_type: vmm
+         vm_provider: redhat
+         resolution_immediacy: pre-provision
+         deploy_immediacy: immediate
+         state: present

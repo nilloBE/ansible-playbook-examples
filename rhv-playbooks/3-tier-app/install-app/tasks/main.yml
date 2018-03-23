@@ -1,0 +1,73 @@
+---
+# tasks file for install-app
+- name: copy the resolv.conf file
+  copy:
+    src: ./files/resolv.conf
+    dest: /etc/resolv.conf
+    owner: root
+    group: root
+    mode: 0644
+
+- name: ensure epel is enabled
+  yum:
+    name: epel-release
+    state: present
+
+- name: install required packages
+  yum: 
+    name: "{{ item }}"
+    state: present
+  with_items:
+    - httpd
+    - mod_ssl
+    - php
+    - php-mysql
+    - php-devel
+    - php-gd
+    - php-pecl-memcache
+    - php-pspell
+    - php-snmp
+    - php-xmlrpc
+    - php-xml
+    - nmap
+    - vim
+    - iperf3
+    - mysql
+
+- name: start httpd 
+  systemd:
+    name: httpd
+    enabled: yes
+    state: started
+
+#- name: open centos firewalld ports for Apache
+#  firewalld:
+#    port: "{{ apache_port }}/tcp"
+#    permanent: true
+#    state: enabled
+
+- name: open iptables entries for Apache
+  command: "iptables -I INPUT -p tcp --dport {{ apache_port}} -j ACCEPT"
+
+- name: save iptables configuration
+  shell: iptables-save > /etc/sysconfig/iptables
+
+- name: copy the basic PHP application file
+  template:
+    src: ./templates/php-app.php.j2
+    dest: /var/www/html/myapp.php
+    owner: root
+    group: root
+    mode: 0644
+
+- name: configure SELinux to allow PHP to reach the DB via command
+  shell: setsebool -P httpd_can_network_connect 1
+
+- name: disbale selinux
+  shell: setenforce 0
+#- name: configure SELinux to allow PHP to reach the DB
+#  seboolean: 
+#    name: httpd_can_network_connect
+#    state: yes
+#    persistent: yes
+

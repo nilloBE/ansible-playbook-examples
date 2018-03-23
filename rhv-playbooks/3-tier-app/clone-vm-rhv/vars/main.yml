@@ -1,0 +1,6 @@
+---
+# vars file for clone-vm-rhv
+tenant: common
+ap: default
+epg: default
+template: centos7-3

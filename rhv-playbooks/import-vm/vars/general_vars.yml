@@ -1,0 +1,14 @@
+template_name: centos7-3
+tenant_name: AcmeTenant
+ap_name: AcmeOpenApps
+epg_name: "web-servers"
+#vCenter details
+vcenter: vcenter6-app-08.nillo.net
+vcenter_user: admnistrator@vsphere.local
+vcenter_pass: VMware123456!
+vmw_dc: DC2
+vmw_cluster: ACI-Compute-DC2
+vmw_host_01: esx19.nillo.net
+# RHV Details
+rhv_cluster: CLUSTER-01
+rhv_storage_domain: NFS-DC2

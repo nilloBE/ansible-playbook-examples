@@ -1,0 +1,17 @@
+[local]
+localhost
+
+[APIC]
+apic-troy-1                     # single APIC in system- can also use IP if no DNS or /etc/hosts isn't setup
+
+[frontend]
+frontend-01 ansible_host=12.12.1.15 master='yes'
+frontend-02 ansible_host=12.12.1.24 master='no'
+
+[web]
+web-01 ansible_host=12.12.1.25
+web-02 ansible_host=12.12.1.26
+web-03 ansible_host=12.12.1.27
+
+[all:vars]
+user = 'ansible-server'

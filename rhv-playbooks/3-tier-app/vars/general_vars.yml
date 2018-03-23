@@ -1,4 +1,24 @@
+# RHV Specific Settings
 template_name: centos7-3
+cluster_name: CLUSTER-01
+vm_memory: 1024MiB
+vm_memory_g: 512MiB
+storage_domain: NFS-DC2
+
+# APIC Specific Settings
 tenant_name: AcmeTenant
 ap_name: AcmeOpenApps
-epg_name: web-servers
+epg_name: webservers
+web_epg_name: webservers
+frontend_epg_name: frontend
+app_contract_name: MyAcmeOpenApp
+ansible_contract: Ansible-Provisioning
+proxy_contract: proxy-access
+bd_name: "12.12.1.0-bd"
+vmm_name: RHV-VMM-01
+
+# HAProxy and Keepalived Settings
+int_name: eth0
+backend_01: 12.12.1.25
+backend_02: 12.12.1.26
+backend_03: 12.12.1.27

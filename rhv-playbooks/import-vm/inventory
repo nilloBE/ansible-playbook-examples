@@ -5,7 +5,7 @@ localhost
 apic-troy-1                     # single APIC in system- can also use IP if no DNS or /etc/hosts isn't setup
 
 [web]
-web1 ansible_host='12.12.1.16' disk='8' datastore='iSCSI-3' network='VM Network' memory='4096' cpucount='2' osid='centos64Guest'
+web4 ansible_host='10.40.40.14' disk='8' datastore='iSCSI-4' network='VM Network' memory='4096' cpucount='2' osid='centos64Guest'
 
 [all:vars]
 user = 'ansible-server'

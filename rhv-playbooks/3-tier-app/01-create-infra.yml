@@ -1,0 +1,44 @@
+---
+# This playbook creates EPGs and maps them to RHV and then clones VM on rHV and connects to the EPGs.
+#
+# First we create the EPGs
+#
+- name: create the network configuration on APIC and RHVM
+  hosts: apic-troy-1
+  connection: local
+  gather_facts: no
+
+  vars_files:
+    - ./vars/general_vars.yml
+
+  tasks:
+    - include: create-network.yml
+
+  roles:
+  - { role: "base-contracts" }
+
+# Then we create the VMs and connect them
+#
+- name: create frontend VMs in oVirt and connect to the EPG
+  hosts: frontend
+  connection: local
+  gather_facts: no
+
+  vars_files:
+    - ./vars/general_vars.yml
+    - ./vars/ovirt_data.yml
+
+  roles:
+  - { role: "clone-vm-rhv", tenant: "{{ tenant_name }}", ap: "{{ ap_name }}", epg: "{{ frontend_epg_name }}", template: "{{ template_name }}" }
+
+- name: create web VMs in oVirt and connect to the EPG
+  hosts: web
+  connection: local
+  gather_facts: no
+
+  vars_files:
+    - ./vars/general_vars.yml
+    - ./vars/ovirt_data.yml
+
+  roles:
+  - { role: "clone-vm-rhv", tenant: "{{ tenant_name }}", ap: "{{ ap_name }}", epg: "{{ web_epg_name }}", template: "{{ template_name }}" }
